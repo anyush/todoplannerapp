@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
+</head>
+<body bgcolor=#f2d675>
+    <div class="container">
+        <form method="post" action="{% url 'signup' %}">
+            {% csrf_token %}
+            <h2><em>Register on our website</em></h2>
+            <div>
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    {% if field.errors %}
+                        <p>{{ field.errors|striptags }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <label><b>Username</b></label>
+            <br />
+            {{ form.username }}
+            <br />
+
+            <label><b>Password</b></label>
+            <br />
+            {{ form.password1 }}
+            <br />
+            <label><b>Repeat password</b></label>
+            <br />
+            {{ form.password2 }}
+            <br />
+
+            <button type="submit">Register</button>
+            <p><a href="{% url 'login' %}">Back to login</a></p>
+            <input type="hidden" name="next" value="{{ next }}" />
+        </form>
+    </div>
+</body>
+</html>
