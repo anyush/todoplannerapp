@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Create new project{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url 'create_project' %}">
+    {% csrf_token %}
+    <h2><em>Project creation</em></h2>
+    <div>
+        {{ form.non_field_errors }}
+        {% for field in form %}
+        {% if field.errors %}
+        <p>{{ field.errors|striptags }}</p>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div>
+        <label><b>Project name</b></label>
+        <br />
+        {{ form.name }}
+        <br />
+
+        <label><b>Description</b></label>
+        <br />
+        {{ form.description }}
+        <br />
+
+        <label><b>Members</b></label>
+        <br />
+        {{ form.members }}
+        <br />
+
+        <label><b>Tags</b></label>
+        <br />
+        {{ form.tags }}
+        <br />
+
+        <button type="submit" class="form_button">Create</button>
+        <input type="hidden" name="next" value="{{ next }}" />
+    </div>
+</form>
+{% endblock %}
