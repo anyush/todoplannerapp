@@ -30,7 +30,7 @@ def homepage(request):
 def project_page(request, project_id):
     if request.user.projects.filter(id=project_id).exists():
         project = Project.objects.filter(id=project_id).first()
-        return render(request, 'project/project.html', context={'project': project})
+        return render(request, 'project/project_about.html', context={'project': project})
     return redirect('')
 
 

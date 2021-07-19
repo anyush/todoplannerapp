@@ -3,29 +3,5 @@
 {% block title %}Project{% endblock %}
 
 {% block content %}
-<label><b>Project name</b></label>
-<br />
-{{ project.name }}
-<br />
 
-<label><b>Description</b></label>
-<br />
-{{ project.description }}
-<br />
-
-<label><b>Members</b></label>
-<br />
-{% for member in project.members.all %}
-{{ member.username }}
-<br />
-{% endfor %}
-
-<label><b>Tags</b></label>
-<br />
-{% for tag in project.tags.all %}
-{{ tag.name }}
-<br />
-{% endfor %}
-
-<input type="hidden" name="next" value="{{ next }}" />
 {% endblock %}

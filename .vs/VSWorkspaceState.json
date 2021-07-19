@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\static",
+    "\\static\\css",
+    "\\templates",
+    "\\templates\\project",
+    "\\templates\\registration"
+  ],
+  "SelectedNode": "\\templates\\project\\create_project.html",
+  "PreviewInSolutionExplorer": false
+}
