@@ -26,7 +26,7 @@ urlpatterns = [
                                                          authentication_form=forms.CustomAuthForm),
          name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page=settings.LOGOUT_REDIRECT_URL), name='logout'),
-    path('projects/<int:project_id>/', views.project_page),
+    path('projects/<int:project_id>/', views.project_about),
     path('projects/create/', views.project_creation, name='create_project'),
     path('admin/', admin.site.urls),
 ]
