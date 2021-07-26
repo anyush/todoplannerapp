@@ -35,36 +35,34 @@ def project_page(request, project_id):
 
 
 @login_required
+@decorators.project_id_is_valid
+@decorators.user_is_project_member
+@decorators.ajax_only
 def project_page_move_col(request, project_id):
-    if services.user_is_project_member(request, project_id):
-        if request.is_ajax():
-            if request.method == 'POST':
-                data = json.loads(request.body)
-                print(f"Move column nr. {data['old_col_n']} to nr. {data['new_col_n']}")
-            return JsonResponse({})
-    return redirect('..')
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        print(f"Move column nr. {data['old_col_n']} to nr. {data['new_col_n']}")
+    return JsonResponse({})
 
 
 @login_required
+@decorators.project_id_is_valid
+@decorators.user_is_project_member
+@decorators.ajax_only
 def project_page_move_task(request, project_id):
-    if services.user_is_project_member(request, project_id):
-        if request.is_ajax():
-            if request.method == 'POST':
-                data = json.loads(request.body)
-                print(f"Move task nr. {data['old_n']} from col nr. {data['old_col']} to nr. {data['new_n']} col nr. " +
-                      f"{data['new_col']}")
-            return JsonResponse({})
-    return redirect('..')
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        print(f"Move task nr. {data['old_n']} from col nr. {data['old_col']} to nr. {data['new_n']} col nr. " +
+              f"{data['new_col']}")
+    return JsonResponse({})
 
 
 @login_required
 @decorators.project_id_is_valid
 @decorators.user_is_project_member
 def project_about(request, project_id):
-    if services.user_is_project_member(request, project_id):
-        project = services.get_project_by_id(project_id)
-        return render(request, 'project/project_about.html', context={'project': project})
-    return redirect('')
+    project = services.get_project_by_id(project_id)
+    return render(request, 'project/project_about.html', context={'project': project})
 
 
 @login_required
