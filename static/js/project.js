@@ -28,12 +28,11 @@ cols.forEach(col => {
         const task = document.querySelector('.dragging')
         if (task == null)
             return;
-        const afterElement = getTaskDragAfterElement(col, e.clientY)
-        if (afterElement == null) {
-            col.appendChild(task)
-        } else {
-            col.insertBefore(task, afterElement)
-        }
+        var afterElement = getTaskDragAfterElement(col, e.clientY)
+        if (afterElement == null)
+            afterElement = col.querySelector('.hidden_task')
+        col.insertBefore(task, afterElement)
+        task.style.backgroundColor = afterElement.style.backgroundColor
     })
 })
 
@@ -103,7 +102,6 @@ function getTaskDragAfterElement(col, y) {
 
 
 function sendDataToServer(data, url="") {
-    console.log('request sent')
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", url, true);
     xhttp.setRequestHeader('X-Requested-With', 'XMLHttpRequest');

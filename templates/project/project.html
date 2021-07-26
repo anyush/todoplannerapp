@@ -16,13 +16,14 @@
 <div style="overflow-x:auto;">
     <table class="task_table">
         <tr id="row">
-            {% for column_header, column_tasks in columns %}
-            <td class="task_column">
-                <div class="task_column_header" draggable="true">{{ column_header }}</div>
+            {% for column_name, column_tasks, column_style, task_style in data %}
+            <td class="task_column" style="{{ column_style }}">
+                <div class="task_column_header" draggable="true">{{ column_name }}</div>
                 {% for task in column_tasks %}
-                <div class="task" draggable="true">
-                    {{ task }}
+                <div class="task" style="{{ task_style }}" draggable="true">
+                    {{ task.name }}
                 </div>
+                <div class="hidden_task" hidden="hidden" style="{{ task_style }}"></div>
                 {% endfor %}
             </td>
             {% endfor %}

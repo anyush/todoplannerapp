@@ -36,6 +36,17 @@ def user_is_project_member(request, project_id) -> bool:
     return request.user.projects.filter(id=project_id).exists()
 
 
-def get_project_tasks(project_id) -> tuple:
-    return tuple((group, tuple(task for task in Task.objects.filter(task_group=group.id)))
+def get_project_task_group_style(task_group) -> str:
+    return "background-color: " + task_group.color
+
+
+def get_project_task_style(task_group) -> str:
+    return "background-color: " + task_group.task_color
+
+
+def get_project_page_data(project_id) -> tuple:
+    return tuple((group.name,
+                  tuple(Task.objects.filter(task_group=group.id)),
+                  get_project_task_group_style(group),
+                  get_project_task_style(group))
                  for group in TaskGroup.objects.filter(project_id=project_id))
