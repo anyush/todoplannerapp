@@ -1,0 +1,35 @@
+.container {
+    width: 80%;
+}
+
+.task_table {
+    border-radius: 10px;
+    width: 100%;
+    height: max-content;
+    background-color: #e1eff5;
+    overflow: hidden;
+    table-layout: auto;
+}
+
+.task_column {
+    vertical-align: top;
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: solid 2px black;
+    margin: 0;
+}
+
+.task_column_header {
+    width: 200px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: white;
+}
+
+.task {
+    border-radius: 10px;
+    width: 192px;
+    margin: 4px;
+    background-color: #ebd06e;
+}

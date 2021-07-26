@@ -1,22 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .forms import CustomRegistrationForm, ProjectCreationForm
 from .models import Project
+import mainapp.services as services
+import mainapp.decorators as decorators
+import json
 
 # Create your views here.
 
 
 def signup(request):
-    if request.method == 'POST':
-        form = CustomRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('')
-    else:
-        form = CustomRegistrationForm()
+    if request.method == 'POST' and services.try_register_user(request):
+        return redirect('')
+
+    form = CustomRegistrationForm()
     return render(request, 'registration/signup.html', {'form': form})
 
 
@@ -27,9 +26,43 @@ def homepage(request):
 
 
 @login_required
+@decorators.project_id_is_valid
+@decorators.user_is_project_member
+def project_page(request, project_id):
+    data = services.get_project_tasks(project_id)
+    cols = ((group.name, (task.description for task in tasks)) for group, tasks in data)
+    return render(request, 'project/project.html', context={'columns': cols})
+
+
+@login_required
+def project_page_move_col(request, project_id):
+    if services.user_is_project_member(request, project_id):
+        if request.is_ajax():
+            if request.method == 'POST':
+                data = json.loads(request.body)
+                print(f"Move column nr. {data['old_col_n']} to nr. {data['new_col_n']}")
+            return JsonResponse({})
+    return redirect('..')
+
+
+@login_required
+def project_page_move_task(request, project_id):
+    if services.user_is_project_member(request, project_id):
+        if request.is_ajax():
+            if request.method == 'POST':
+                data = json.loads(request.body)
+                print(f"Move task nr. {data['old_n']} from col nr. {data['old_col']} to nr. {data['new_n']} col nr. " +
+                      f"{data['new_col']}")
+            return JsonResponse({})
+    return redirect('..')
+
+
+@login_required
+@decorators.project_id_is_valid
+@decorators.user_is_project_member
 def project_about(request, project_id):
-    if request.user.projects.filter(id=project_id).exists():
-        project = Project.objects.filter(id=project_id).first()
+    if services.user_is_project_member(request, project_id):
+        project = services.get_project_by_id(project_id)
         return render(request, 'project/project_about.html', context={'project': project})
     return redirect('')
 
@@ -37,12 +70,9 @@ def project_about(request, project_id):
 @login_required
 def project_creation(request):
     if request.method == 'POST':
-        form = ProjectCreationForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.manager = request.user
-            project.save()
-            return redirect(f'/projects/{project.id}/')
-    else:
-        form = ProjectCreationForm(initial={'manager': request.user})
+        created, project_id = services.try_create_project(request)
+        if created:
+            return redirect(f'/projects/{project_id}/')
+
+    form = ProjectCreationForm(initial={'manager': request.user})
     return render(request, 'project/create_project.html', context={'form': form})

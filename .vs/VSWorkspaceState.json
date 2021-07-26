@@ -3,10 +3,11 @@
     "",
     "\\static",
     "\\static\\css",
+    "\\static\\js",
     "\\templates",
     "\\templates\\project",
     "\\templates\\registration"
   ],
-  "SelectedNode": "\\templates\\project\\create_project.html",
+  "SelectedNode": "\\static\\css\\project.css",
   "PreviewInSolutionExplorer": false
 }

@@ -17,13 +17,20 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
 
 
+class TaskGroup(models.Model):
+    name = models.CharField(max_length=20)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    color = models.CharField(max_length=10)
+    task_color = models.CharField(max_length=10)
+    tags = models.ManyToManyField(Tag, blank=True)
+
+
 class Task(models.Model):
     name = models.CharField(max_length=50)
-    description = models.TextField()
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    creation_time = models.DateTimeField()
-    deadline_time = models.DateTimeField(blank=True)
-    state = models.CharField(max_length=20)
+    description = models.TextField(blank=True)
+    task_group = models.ForeignKey(TaskGroup, on_delete=models.CASCADE)
+    creation_time = models.DateTimeField(auto_now_add=True)
+    deadline_time = models.DateTimeField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_tasks')
     performers = models.ManyToManyField(User, related_name='performed_tasks', blank=True)
     tags = models.ManyToManyField(Tag, blank=True)

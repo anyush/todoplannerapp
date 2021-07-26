@@ -1,7 +1,34 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/project.css' %}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/project.js' %}" defer></script>
+{% endblock %}
 
 {% block title %}Project{% endblock %}
 
 {% block content %}
-
+<div style="overflow-x:auto;">
+    <table class="task_table">
+        <tr id="row">
+            {% for column_header, column_tasks in columns %}
+            <td class="task_column">
+                <div class="task_column_header" draggable="true">{{ column_header }}</div>
+                {% for task in column_tasks %}
+                <div class="task" draggable="true">
+                    {{ task }}
+                </div>
+                {% endfor %}
+            </td>
+            {% endfor %}
+            <td id="hidden_col" style="width: 100%"></td>
+        </tr>
+    </table>
+</div>
+<div id="some_id"></div>
 {% endblock %}
