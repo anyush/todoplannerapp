@@ -60,8 +60,8 @@ headers.forEach(header => {
         header.parentNode.classList.remove('dragging_col')
         sendDataToServer(JSON.stringify(
             {
-                'old_col_n': draggingColN,
-                'new_col_n': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
+                'old_col_pos': draggingColN,
+                'new_col_pos': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
             }), "mv_col/");
     })
 })
@@ -77,10 +77,10 @@ tasks.forEach(task => {
         task.classList.remove('dragging')
         sendDataToServer(JSON.stringify(
             {
-                'old_col': draggingTaskCol,
-                'new_col': [...task.parentNode.parentNode.children].indexOf(task.parentNode),
-                'old_n': draggingTaskN,
-                'new_n': [...task.parentNode.children].indexOf(task) - 1
+                'old_col_pos': draggingTaskCol,
+                'new_col_pos': [...task.parentNode.parentNode.children].indexOf(task.parentNode),
+                'old_pos': draggingTaskN,
+                'new_pos': [...task.parentNode.children].indexOf(task) - 1
             }), "mv_task/");
     })
 })

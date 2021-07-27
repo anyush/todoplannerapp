@@ -40,7 +40,7 @@ def project_page(request, project_id):
 def project_page_move_col(request, project_id):
     if request.method == 'POST':
         data = json.loads(request.body)
-        print(f"Move column nr. {data['old_col_n']} to nr. {data['new_col_n']}")
+        services.change_task_group_position(project_id, data['old_col_pos'], data['new_col_pos'])
     return JsonResponse({})
 
 
@@ -51,8 +51,8 @@ def project_page_move_col(request, project_id):
 def project_page_move_task(request, project_id):
     if request.method == 'POST':
         data = json.loads(request.body)
-        print(f"Move task nr. {data['old_n']} from col nr. {data['old_col']} to nr. {data['new_n']} col nr. " +
-              f"{data['new_col']}")
+        print(f"Move task nr. {data['old_pos']} from col nr. {data['old_col_pos']} to nr. {data['new_pos']} col nr. " +
+              f"{data['new_col_pos']}")
     return JsonResponse({})
 
 
