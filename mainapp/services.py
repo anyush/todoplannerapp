@@ -56,7 +56,7 @@ def get_project_page_data(project_id) -> tuple:
 
 @transaction.atomic
 def change_task_group_position(project_id, old_pos, new_pos) -> bool:
-    if old_pos == new_pos or new_pos < 0 or new_pos > TaskGroup.objects.filter(project_id=project_id).count():
+    if old_pos == new_pos or new_pos < 0 or new_pos >= TaskGroup.objects.filter(project_id=project_id).count():
         return False
     moved_task = TaskGroup.objects.get(project=project_id, position=old_pos)
     if old_pos < new_pos:
