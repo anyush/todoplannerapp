@@ -12,12 +12,13 @@ class Tag(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
-    manager = models.ForeignKey(User, on_delete=models.PROTECT, related_name='managed_projects')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='owned_projects')
     members = models.ManyToManyField(User, related_name='projects')
     tags = models.ManyToManyField(Tag, blank=True)
 
 
 class TaskGroup(models.Model):
+    position = models.IntegerField()
     name = models.CharField(max_length=20)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     color = models.CharField(max_length=10)
@@ -26,7 +27,8 @@ class TaskGroup(models.Model):
 
 
 class Task(models.Model):
-    name = models.CharField(max_length=50)
+    position = models.IntegerField()
+    name = models.CharField(max_length=20)
     description = models.TextField(blank=True)
     task_group = models.ForeignKey(TaskGroup, on_delete=models.CASCADE)
     creation_time = models.DateTimeField(auto_now_add=True)

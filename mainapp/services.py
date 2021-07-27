@@ -46,7 +46,7 @@ def get_project_task_style(task_group) -> str:
 
 def get_project_page_data(project_id) -> tuple:
     return tuple((group.name,
-                  tuple(Task.objects.filter(task_group=group.id)),
+                  tuple(Task.objects.filter(task_group=group.id).order_by('position')),
                   get_project_task_group_style(group),
                   get_project_task_style(group))
-                 for group in TaskGroup.objects.filter(project_id=project_id))
+                 for group in TaskGroup.objects.filter(project_id=project_id).order_by('position'))
