@@ -4,10 +4,20 @@ const hidden_col = document.getElementById('hidden_col')
 const headers = document.querySelectorAll('.task_column_header')
 const tasks = document.querySelectorAll('.task')
 
-var draggingColN;
+var draggingGroupOldPos;
 
-var draggingTaskCol;
-var draggingTaskN;
+var draggingTaskOldGroupPos;
+var draggingTaskOldPos;
+
+window.onload = function colorizeTable() {
+    cols.forEach(col => {
+        col.style.backgroundColor = col.getAttribute('bkg_clr')
+    })
+
+    tasks.forEach(task => {
+        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
+    })
+}
 
 row.addEventListener('dragover', e => {
     e.preventDefault()
@@ -30,9 +40,10 @@ cols.forEach(col => {
             return;
         var afterElement = getTaskDragAfterElement(col, e.clientY)
         if (afterElement == null)
-            afterElement = col.querySelector('.hidden_task')
-        col.insertBefore(task, afterElement)
-        task.style.backgroundColor = afterElement.style.backgroundColor
+            col.appendChild(task)
+        else
+            col.insertBefore(task, afterElement)
+        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
     })
 })
 
@@ -53,15 +64,15 @@ function getColDragAfterElement(x) {
 headers.forEach(header => {
     header.addEventListener('dragstart', () => {
         header.parentNode.classList.add('dragging_col')
-        draggingColN = [...header.parentNode.parentNode.children].indexOf(header.parentNode);
+        draggingGroupOldPos = [...header.parentNode.parentNode.children].indexOf(header.parentNode);
     })
 
     header.addEventListener('dragend', () => {
         header.parentNode.classList.remove('dragging_col')
         sendDataToServer(JSON.stringify(
             {
-                'old_col_pos': draggingColN,
-                'new_col_pos': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
+                'old_pos': draggingGroupOldPos,
+                'new_pos': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
             }), "mv_col/");
     })
 })
@@ -69,17 +80,17 @@ headers.forEach(header => {
 tasks.forEach(task => {
     task.addEventListener('dragstart', () => {
         task.classList.add('dragging')
-        draggingTaskCol = [...task.parentNode.parentNode.children].indexOf(task.parentNode);
-        draggingTaskN = [...task.parentNode.children].indexOf(task) - 1;
+        draggingTaskOldGroupPos = [...task.parentNode.parentNode.children].indexOf(task.parentNode);
+        draggingTaskOldPos = [...task.parentNode.children].indexOf(task) - 1;
     })
 
     task.addEventListener('dragend', () => {
         task.classList.remove('dragging')
         sendDataToServer(JSON.stringify(
             {
-                'old_col_pos': draggingTaskCol,
-                'new_col_pos': [...task.parentNode.parentNode.children].indexOf(task.parentNode),
-                'old_pos': draggingTaskN,
+                'old_group_pos': draggingTaskOldGroupPos,
+                'new_group_pos': [...task.parentNode.parentNode.children].indexOf(task.parentNode),
+                'old_pos': draggingTaskOldPos,
                 'new_pos': [...task.parentNode.children].indexOf(task) - 1
             }), "mv_task/");
     })

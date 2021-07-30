@@ -16,20 +16,19 @@
 <div style="overflow-x:auto;">
     <table class="task_table">
         <tr id="row">
-            {% for column_name, column_tasks, column_style, task_style in data %}
-            <td class="task_column" style="{{ column_style }}">
-                <div class="task_column_header" draggable="true">{{ column_name }}</div>
-                {% for task in column_tasks %}
-                <div class="task" style="{{ task_style }}" draggable="true">
+            {% for task_group, tasks in data %}
+            <td class="task_column" id="group_{{ task_group.id }}"
+                bkg_clr="{{ task_group.color }}" task_bkg_color="{{ task_group.task_color }}">
+                <div class="task_column_header" draggable="true">{{ task_group.name }}</div>
+                {% for task in tasks %}
+                <div class="task" id="task_{{ task.id }}" draggable="true">
                     {{ task.name }}
                 </div>
                 {% endfor %}
-                <div class="hidden_task" hidden="hidden" style="{{ task_style }}"></div>
             </td>
             {% endfor %}
             <td id="hidden_col" style="width: 100%"></td>
         </tr>
     </table>
 </div>
-<div id="some_id"></div>
 {% endblock %}

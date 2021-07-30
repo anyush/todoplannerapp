@@ -1,12 +1,9 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from .forms import CustomRegistrationForm, ProjectCreationForm
-from .models import Project
 import mainapp.services as services
 import mainapp.decorators as decorators
-import json
 
 # Create your views here.
 
@@ -39,8 +36,7 @@ def project_page(request, project_id):
 @decorators.ajax_only
 def project_page_move_col(request, project_id):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        services.change_task_group_position(project_id, data['old_col_pos'], data['new_col_pos'])
+        services.change_task_group_position(request, project_id)
     return JsonResponse({})
 
 
@@ -50,9 +46,7 @@ def project_page_move_col(request, project_id):
 @decorators.ajax_only
 def project_page_move_task(request, project_id):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        print(f"Move task nr. {data['old_pos']} from col nr. {data['old_col_pos']} to nr. {data['new_pos']} col nr. " +
-              f"{data['new_col_pos']}")
+        services.change_task_position(request, project_id)
     return JsonResponse({})
 
 
