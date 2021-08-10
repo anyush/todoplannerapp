@@ -27,8 +27,6 @@ urlpatterns = [
          name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page=settings.LOGOUT_REDIRECT_URL), name='logout'),
     path('projects/<int:project_id>/', views.project_page),
-    path('projects/<int:project_id>/mv_col/', views.project_page_move_col),
-    path('projects/<int:project_id>/mv_task/', views.project_page_move_task),
     path('projects/<int:project_id>/about/', views.project_about),
     path('projects/create/', views.project_creation, name='create_project'),
     path('admin/', admin.site.urls),

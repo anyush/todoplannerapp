@@ -1,10 +1,12 @@
 from django.contrib.auth import login
-from .forms import CustomRegistrationForm, ProjectCreationForm
-from .models import Project, TaskGroup, Task
+import json
+
+import mainapp.forms as forms
+import mainapp.models as models
 
 
 def try_register_user(request) -> bool:
-    form = CustomRegistrationForm(request.POST)
+    form = forms.CustomRegistrationForm(request.POST)
     if form.is_valid():
         user = form.save()
         login(request, user)
@@ -13,7 +15,7 @@ def try_register_user(request) -> bool:
 
 
 def try_create_project(request) -> (bool, int):
-    form = ProjectCreationForm(request.POST)
+    form = forms.ProjectCreationForm(request.POST)
     if form.is_valid():
         project = form.save(commit=False)
         project.manager = request.user
@@ -22,20 +24,16 @@ def try_create_project(request) -> (bool, int):
     return False
 
 
-def project_id_is_valid(project_id):
-    return Project.objects.filter(id=project_id).exists()
+def get_project_page_data(project_id) -> tuple:
+    return tuple((group, tuple(models.Task.objects.by_group_id(group.id).order_by('position')))
+                 for group in models.TaskGroup.objects.by_project_id(project_id).order_by('position'))
 
 
-def get_project_by_id(project_id) -> Project:
-    if project_id_is_valid(project_id):
-        return Project.objects.get(id=project_id)
-    raise ValueError
-
-
-def user_is_project_member(request, project_id) -> bool:
-    return request.user.projects.filter(id=project_id).exists()
-
-
-def get_project_tasks(project_id) -> tuple:
-    return tuple((group, tuple(task for task in Task.objects.filter(task_group=group.id)))
-                 for group in TaskGroup.objects.filter(project_id=project_id))
+def values_between(values, start, end) -> bool:
+    """
+    Checks if all values from 'values' are greater than 'start' and less than 'end'
+    """
+    for value in values:
+        if not start < value < end:
+            return False
+    return True

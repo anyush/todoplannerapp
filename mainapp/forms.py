@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.forms.widgets import PasswordInput, TextInput, Textarea, SelectMultiple
 from django.forms import ModelForm
-from .models import Project, User, Tag
+
+import mainapp.models as models
 
 
 class CustomAuthForm(AuthenticationForm):
@@ -32,10 +33,10 @@ class ProjectCreationForm(ModelForm):
     members_choices = ((user, user.username) for user in User.objects.all())
     members = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'form_field'}), choices=members_choices,
                                         required=False)
-    tags_choices = ((tag, tag.name) for tag in Tag.objects.all())
+    tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())
     tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'form_field'}), choices=tags_choices,
                                      required=False)
 
     class Meta:
-        model = Project
+        model = models.Project
         fields = ('name', 'description', 'members', 'tags')

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'mainapp',
 ]
 
@@ -73,8 +74,22 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'todoplannerapp.wsgi.application'
+# WSGI_APPLICATION = 'todoplannerapp.wsgi.application'
+ASGI_APPLICATION = 'todoplannerapp.routing.application'
 
+
+CHANNEL_LAYERS = {
+    # 'default': {
+    #     'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    # }
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            # "hosts": [('127.0.0.1', 6379)],
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')]
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
