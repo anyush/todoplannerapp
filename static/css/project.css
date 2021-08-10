@@ -11,7 +11,7 @@
     table-layout: auto;
 }
 
-.task_column {
+.task_group {
     vertical-align: top;
     padding: 0;
     border-radius: 10px;
@@ -20,7 +20,7 @@
     margin: 0;
 }
 
-.task_column_header {
+.task_group_header {
     width: 200px;
     height: 20px;
     border-radius: 10px;

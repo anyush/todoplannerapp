@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
-from .models import Project
 from functools import wraps
+
+import mainapp.models as models
 
 
 BAD_REQUEST_URL = ''  # url to redirect if bad request received
@@ -12,7 +13,7 @@ def project_id_is_valid(view_func):
     """
     @wraps(view_func)
     def wrapper(request, project_id, *args, **kwargs):
-        if Project.objects.filter(id=project_id).exists():
+        if models.Project.objects.id_is_valid(project_id):
             return view_func(request, project_id, *args, **kwargs)
         return redirect(BAD_REQUEST_URL)
     return wrapper
@@ -25,7 +26,7 @@ def user_is_project_member(view_func):
     """
     @wraps(view_func)
     def wrapper(request, project_id, *args, **kwargs):
-        if request.user.projects.filter(id=project_id).exists():
+        if models.Project.objects.user_is_project_member(project_id, request.user.id):
             return view_func(request, project_id, *args, **kwargs)
         return redirect(BAD_REQUEST_URL)
     return wrapper

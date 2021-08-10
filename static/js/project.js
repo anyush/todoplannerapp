@@ -1,16 +1,20 @@
 const row = document.getElementById('row')
-const cols = document.querySelectorAll('.task_column')
+const task_groups = document.querySelectorAll('.task_group')
 const hidden_col = document.getElementById('hidden_col')
-const headers = document.querySelectorAll('.task_column_header')
+const headers = document.querySelectorAll('.task_group_header')
 const tasks = document.querySelectorAll('.task')
 
-var draggingGroupOldPos;
 
-var draggingTaskOldGroupPos;
-var draggingTaskOldPos;
+var loc = window.location
+var wsStart = 'ws://'
+if (loc.protocol == 'https:') {
+    wsStart = 'wss://'
+}
+var endpoint = wsStart + loc.host + loc.pathname
+var socket = new ReconnectingWebSocket(endpoint)
 
 window.onload = function colorizeTable() {
-    cols.forEach(col => {
+    task_groups.forEach(col => {
         col.style.backgroundColor = col.getAttribute('bkg_clr')
     })
 
@@ -21,34 +25,34 @@ window.onload = function colorizeTable() {
 
 row.addEventListener('dragover', e => {
     e.preventDefault()
-    const col = document.querySelector('.dragging_col')
-    if (col == null)
+    const group = document.querySelector('.dragging_group')
+    if (group == null)
         return;
-    const afterCol = getColDragAfterElement(e.clientX)
-    if (afterCol == null) {
-        row.insertBefore(col, hidden_col)
+    const afterGroup = getGroupDragAfterElement(e.clientX)
+    if (afterGroup == null) {
+        row.insertBefore(group, hidden_col)
     } else {
-        row.insertBefore(col, afterCol)
+        row.insertBefore(group, afterGroup)
     }
 })
 
-cols.forEach(col => {
-    col.addEventListener('dragover', e => {
+task_groups.forEach(group => {
+    group.addEventListener('dragover', e => {
         e.preventDefault()
         const task = document.querySelector('.dragging')
         if (task == null)
             return;
-        var afterElement = getTaskDragAfterElement(col, e.clientY)
+        var afterElement = getTaskDragAfterElement(group, e.clientY)
         if (afterElement == null)
-            col.appendChild(task)
+            group.appendChild(task)
         else
-            col.insertBefore(task, afterElement)
+            group.insertBefore(task, afterElement)
         task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
     })
 })
 
-function getColDragAfterElement(x) {
-    const draggableElements = [...row.querySelectorAll('.task_column:not(.dragging_col')]
+function getGroupDragAfterElement(x) {
+    const draggableElements = [...row.querySelectorAll('.task_group:not(.dragging_group')]
 
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect()
@@ -63,17 +67,18 @@ function getColDragAfterElement(x) {
 
 headers.forEach(header => {
     header.addEventListener('dragstart', () => {
-        header.parentNode.classList.add('dragging_col')
+        header.parentNode.classList.add('dragging_group')
         draggingGroupOldPos = [...header.parentNode.parentNode.children].indexOf(header.parentNode);
     })
 
     header.addEventListener('dragend', () => {
-        header.parentNode.classList.remove('dragging_col')
-        sendDataToServer(JSON.stringify(
+        header.parentNode.classList.remove('dragging_group')
+        socket.send(JSON.stringify(
             {
-                'old_pos': draggingGroupOldPos,
+                'operation': 'move_task_group',
+                'group_id': header.parentNode.getAttribute('id').split('_')[1],
                 'new_pos': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
-            }), "mv_col/");
+            }));
     })
 })
 
@@ -86,18 +91,18 @@ tasks.forEach(task => {
 
     task.addEventListener('dragend', () => {
         task.classList.remove('dragging')
-        sendDataToServer(JSON.stringify(
+        socket.send(JSON.stringify(
             {
-                'old_group_pos': draggingTaskOldGroupPos,
-                'new_group_pos': [...task.parentNode.parentNode.children].indexOf(task.parentNode),
-                'old_pos': draggingTaskOldPos,
+                'operation': 'move_task',
+                'task_id': task.getAttribute('id').split('_')[1],
+                'new_group_id': task.parentNode.getAttribute('id').split('_')[1],
                 'new_pos': [...task.parentNode.children].indexOf(task) - 1
-            }), "mv_task/");
+            }));
     })
 })
 
-function getTaskDragAfterElement(col, y) {
-    const draggableElements = [...col.querySelectorAll('.task:not(.dragging')]
+function getTaskDragAfterElement(group, y) {
+    const draggableElements = [...group.querySelectorAll('.task:not(.dragging')]
 
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect()
@@ -110,9 +115,7 @@ function getTaskDragAfterElement(col, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element
 }
 
-
-
-function sendDataToServer(data, url="") {
+function sendAJAX(data, url) {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", url, true);
     xhttp.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -135,4 +138,51 @@ function getCookie(cname) {
         }
     }
     return "";
+}
+
+socket.onmessage = function (e) {
+    // console.log('message', e)
+    data = JSON.parse(e.data)
+
+    if (data['operation'] == 'move_task_group') {
+        if (data['new_pos'] >= row.childElementCount - 1)
+            return
+
+        var moved_group = document.getElementById('group_' + data['group_id'])
+        if ([...moved_group.parentNode.children].indexOf(moved_group) >= data['new_pos'])
+            var group_on_pos = row.children[data['new_pos']]
+        else
+            var group_on_pos = row.children[data['new_pos'] + 1]
+        if (moved_group != group_on_pos)
+            row.insertBefore(moved_group, group_on_pos)
+    } else if (data['operation'] == 'move_task') {
+        var moved_task = document.getElementById('task_' + data['task_id'])
+        var new_group = document.getElementById('group_' + data['new_group_id'])
+
+        if (data['new_pos'] < new_group.childElementCount - 1) {
+            if (moved_task.parentNode == new_group && [...moved_task.parentNode.children].indexOf(moved_task) < data['new_pos'] + 1)
+                var task_on_position = new_group.children[data['new_pos'] + 2]
+            else
+                var task_on_position = new_group.children[data['new_pos'] + 1]
+            if (moved_task.parentNode == new_group && task_on_position == moved_task)
+                return
+
+            new_group.insertBefore(moved_task, task_on_position)
+        } else {
+            new_group.appendChild(moved_task)
+        }
+        moved_task.style.backgroundColor = moved_task.parentElement.getAttribute('task_bkg_color')
+    }
+}
+
+socket.onopen = function (e) {
+    // console.log('open', e)
+}
+
+socket.onclose = function (e) {
+    // console.log('close', e)
+}
+
+socket.onerror = function (e) {
+    // console.log('error', e)
 }

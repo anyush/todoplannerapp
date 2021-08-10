@@ -8,6 +8,7 @@
 
 {% block scripts %}
 <script src="{% static 'js/project.js' %}" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js"></script>
 {% endblock %}
 
 {% block title %}Project{% endblock %}
@@ -17,9 +18,9 @@
     <table class="task_table">
         <tr id="row">
             {% for task_group, tasks in data %}
-            <td class="task_column" id="group_{{ task_group.id }}"
+            <td class="task_group" id="group_{{ task_group.id }}"
                 bkg_clr="{{ task_group.color }}" task_bkg_color="{{ task_group.task_color }}">
-                <div class="task_column_header" draggable="true">{{ task_group.name }}</div>
+                <div class="task_group_header" draggable="true">{{ task_group.name }}</div>
                 {% for task in tasks %}
                 <div class="task" id="task_{{ task.id }}" draggable="true">
                     {{ task.name }}
