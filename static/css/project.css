@@ -20,6 +20,10 @@
     margin: 0;
 }
 
+.new_task_group {
+    border: none;
+}
+
 .task_group_header {
     width: 200px;
     height: 20px;
@@ -32,4 +36,8 @@
     width: 192px;
     margin: 4px;
     background-color: #ebd06e;
+}
+
+.new_task {
+    background-color: white;
 }

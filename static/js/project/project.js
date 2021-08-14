@@ -1,8 +1,8 @@
 const row = document.getElementById('row')
-const task_groups = document.querySelectorAll('.task_group')
+const task_groups = document.querySelectorAll('.task_group:not(.new_task_group)')
 const hidden_col = document.getElementById('hidden_col')
 const headers = document.querySelectorAll('.task_group_header')
-const tasks = document.querySelectorAll('.task')
+const tasks = document.querySelectorAll('.task:not(.new_task)')
 
 
 var loc = window.location
