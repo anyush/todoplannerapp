@@ -1,8 +1,5 @@
 const row = document.getElementById('row')
-const task_groups = document.querySelectorAll('.task_group:not(.new_task_group)')
 const hidden_col = document.getElementById('hidden_col')
-const headers = document.querySelectorAll('.task_group_header')
-const tasks = document.querySelectorAll('.task:not(.new_task)')
 
 
 var loc = window.location
@@ -12,16 +9,6 @@ if (loc.protocol == 'https:') {
 }
 var endpoint = wsStart + loc.host + loc.pathname
 var socket = new ReconnectingWebSocket(endpoint)
-
-window.onload = function colorizeTable() {
-    task_groups.forEach(col => {
-        col.style.backgroundColor = col.getAttribute('bkg_clr')
-    })
-
-    tasks.forEach(task => {
-        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
-    })
-}
 
 row.addEventListener('dragover', e => {
     e.preventDefault()
@@ -34,21 +21,6 @@ row.addEventListener('dragover', e => {
     } else {
         row.insertBefore(group, afterGroup)
     }
-})
-
-task_groups.forEach(group => {
-    group.addEventListener('dragover', e => {
-        e.preventDefault()
-        const task = document.querySelector('.dragging')
-        if (task == null)
-            return;
-        var afterElement = getTaskDragAfterElement(group, e.clientY)
-        if (afterElement == null)
-            group.appendChild(task)
-        else
-            group.insertBefore(task, afterElement)
-        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
-    })
 })
 
 function getGroupDragAfterElement(x) {
@@ -65,44 +37,8 @@ function getGroupDragAfterElement(x) {
     }, { offset: Number.NEGATIVE_INFINITY }).element
 }
 
-headers.forEach(header => {
-    header.addEventListener('dragstart', () => {
-        header.parentNode.classList.add('dragging_group')
-        draggingGroupOldPos = [...header.parentNode.parentNode.children].indexOf(header.parentNode);
-    })
-
-    header.addEventListener('dragend', () => {
-        header.parentNode.classList.remove('dragging_group')
-        socket.send(JSON.stringify(
-            {
-                'operation': 'move_task_group',
-                'group_id': header.parentNode.getAttribute('id').split('_')[1],
-                'new_pos': [...header.parentNode.parentNode.children].indexOf(header.parentNode)
-            }));
-    })
-})
-
-tasks.forEach(task => {
-    task.addEventListener('dragstart', () => {
-        task.classList.add('dragging')
-        draggingTaskOldGroupPos = [...task.parentNode.parentNode.children].indexOf(task.parentNode);
-        draggingTaskOldPos = [...task.parentNode.children].indexOf(task) - 1;
-    })
-
-    task.addEventListener('dragend', () => {
-        task.classList.remove('dragging')
-        socket.send(JSON.stringify(
-            {
-                'operation': 'move_task',
-                'task_id': task.getAttribute('id').split('_')[1],
-                'new_group_id': task.parentNode.getAttribute('id').split('_')[1],
-                'new_pos': [...task.parentNode.children].indexOf(task) - 1
-            }));
-    })
-})
-
 function getTaskDragAfterElement(group, y) {
-    const draggableElements = [...group.querySelectorAll('.task:not(.dragging')]
+    const draggableElements = [...group.querySelectorAll('.task:not(.dragging)')]
 
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect()
@@ -140,43 +76,178 @@ function getCookie(cname) {
     return "";
 }
 
+function removeAllTaskGroups() {
+    while (row.firstChild != document.getElementById('new_group')) {
+        row.removeChild(row.firstChild);
+    }
+}
+
+
+function createGroupElement(groupData) {
+    var groupElement = document.createElement('td')
+    groupElement.id = 'group_' + groupData['id']
+    groupElement.classList.add('task_group')
+    groupElement.setAttribute('task_bkg_color', groupData['task_color'])
+    groupElement.style.backgroundColor = groupData['color']
+
+
+    groupElement.addEventListener('dragover', e => {
+        e.preventDefault()
+        const task = document.querySelector('.dragging')
+        if (task == null)
+            return;
+        var afterElement = getTaskDragAfterElement(groupElement, e.clientY)
+        if (afterElement == null)
+            afterElement = document.getElementById('new_task_' + groupData['id'])
+        groupElement.insertBefore(task, afterElement)
+        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
+    })
+
+    return groupElement
+}
+
+function createHeaderElement(name) {
+    var headerElement = document.createElement('div')
+    headerElement.classList.add('task_group_header')
+    headerElement.setAttribute('draggable', 'true')
+    headerElement.innerText = name
+    
+    headerElement.addEventListener('dragstart', () => {
+        headerElement.parentNode.classList.add('dragging_group')
+    })
+
+    headerElement.addEventListener('dragend', () => {
+        headerElement.parentNode.classList.remove('dragging_group')
+        socket.send(JSON.stringify(
+            {
+                'operation': 'move_task_group',
+                'group_id': headerElement.parentNode.getAttribute('id').split('_')[1],
+                'new_pos': [...headerElement.parentNode.parentNode.children].indexOf(headerElement.parentNode)
+            }));
+    })
+
+    return headerElement
+}
+
+function createTaskElement(taskData, color) {
+    var taskElement = document.createElement('div')
+    taskElement.id = 'task_' + taskData['id']
+    taskElement.classList.add('task')
+    taskElement.setAttribute('draggable', 'true')
+    taskElement.style.backgroundColor = color
+    taskElement.innerHTML = taskData['name'] + '<hr />' + taskData['description']
+
+    taskElement.addEventListener('dragstart', () => {
+        taskElement.classList.add('dragging')
+    })
+
+    taskElement.addEventListener('dragend', () => {
+        taskElement.classList.remove('dragging')
+        socket.send(JSON.stringify(
+            {
+                'operation': 'move_task',
+                'task_id': taskElement.getAttribute('id').split('_')[1],
+                'new_group_id': taskElement.parentNode.getAttribute('id').split('_')[1],
+                'new_pos': [...taskElement.parentNode.children].indexOf(taskElement) - 1
+            }));
+    })
+
+    return taskElement
+}
+
+function createNewTaskElement(groupId) {
+    var newTaskElement = document.createElement('button')
+    newTaskElement.type = 'submit'
+    newTaskElement.id = 'new_task_' + groupId
+    newTaskElement.classList.add('task')
+    newTaskElement.classList.add('new_task')
+    newTaskElement.innerText = 'New Task'
+
+    return newTaskElement
+}
+
+var messageHandlerGetProjectData = function (data) {
+    data = JSON.parse(data['context']).reverse()
+    removeAllTaskGroups()
+    
+    data.forEach(pair => {
+        var groupData = JSON.parse(pair[0])
+        var tasks = pair[1]
+
+        var groupElement = createGroupElement(groupData)
+
+        var headerElement = createHeaderElement(groupData['name'])
+        groupElement.appendChild(headerElement)
+
+        tasks.forEach(task => {
+            taskData = JSON.parse(task)
+            var taskElement = createTaskElement(taskData, groupData['task_color'])
+            groupElement.appendChild(taskElement)
+        })
+
+        var newTaskElement = createNewTaskElement(groupData['id'])
+        groupElement.appendChild(newTaskElement)
+
+        row.prepend(groupElement)
+    })
+}
+
+var messageHandlerAddTaskGroup = function () {
+    socket.send({
+        'operation': 'get_project_data'
+    })
+}
+
+var messageHandlerMoveTaskGroup = function (data) {
+    if (data['new_pos'] >= row.childElementCount - 1)
+        return
+
+    var moved_group = document.getElementById('group_' + data['group_id'])
+    if ([...moved_group.parentNode.children].indexOf(moved_group) >= data['new_pos'])
+        var group_on_pos = row.children[data['new_pos']]
+    else
+        var group_on_pos = row.children[data['new_pos'] + 1]
+    if (moved_group != group_on_pos)
+        row.insertBefore(moved_group, group_on_pos)
+}
+
+var messageHandlerMoveTask = function (data) {
+    var moved_task = document.getElementById('task_' + data['task_id'])
+    var new_group = document.getElementById('group_' + data['new_group_id'])
+
+    if (data['new_pos'] < new_group.childElementCount - 1) {
+        if (moved_task.parentNode == new_group && [...moved_task.parentNode.children].indexOf(moved_task) < data['new_pos'] + 1)
+            var task_on_position = new_group.children[data['new_pos'] + 2]
+        else
+            var task_on_position = new_group.children[data['new_pos'] + 1]
+        if (moved_task.parentNode == new_group && task_on_position == moved_task)
+            return
+
+        new_group.insertBefore(moved_task, task_on_position)
+    } else {
+        new_group.appendChild(moved_task)
+    }
+    moved_task.style.backgroundColor = moved_task.parentElement.getAttribute('task_bkg_color')
+}
+
+const messageHandlers = {
+    'get_data': messageHandlerGetProjectData,
+    'move_task_group': messageHandlerMoveTaskGroup,
+    'move_task': messageHandlerMoveTask,
+    'add_task_group': messageHandlerAddTaskGroup,
+}
+
 socket.onmessage = function (e) {
     // console.log('message', e)
     data = JSON.parse(e.data)
-
-    if (data['operation'] == 'move_task_group') {
-        if (data['new_pos'] >= row.childElementCount - 1)
-            return
-
-        var moved_group = document.getElementById('group_' + data['group_id'])
-        if ([...moved_group.parentNode.children].indexOf(moved_group) >= data['new_pos'])
-            var group_on_pos = row.children[data['new_pos']]
-        else
-            var group_on_pos = row.children[data['new_pos'] + 1]
-        if (moved_group != group_on_pos)
-            row.insertBefore(moved_group, group_on_pos)
-    } else if (data['operation'] == 'move_task') {
-        var moved_task = document.getElementById('task_' + data['task_id'])
-        var new_group = document.getElementById('group_' + data['new_group_id'])
-
-        if (data['new_pos'] < new_group.childElementCount - 1) {
-            if (moved_task.parentNode == new_group && [...moved_task.parentNode.children].indexOf(moved_task) < data['new_pos'] + 1)
-                var task_on_position = new_group.children[data['new_pos'] + 2]
-            else
-                var task_on_position = new_group.children[data['new_pos'] + 1]
-            if (moved_task.parentNode == new_group && task_on_position == moved_task)
-                return
-
-            new_group.insertBefore(moved_task, task_on_position)
-        } else {
-            new_group.appendChild(moved_task)
-        }
-        moved_task.style.backgroundColor = moved_task.parentElement.getAttribute('task_bkg_color')
-    }
+    messageHandlers[data['operation']](data)
 }
 
 socket.onopen = function (e) {
     // console.log('open', e)
+    socket.send(JSON.stringify({
+        'operation': 'get_data'
+    }))
 }
 
 socket.onclose = function (e) {

@@ -1,4 +1,5 @@
 from django.contrib.auth import login
+import json
 
 import mainapp.forms as forms
 import mainapp.models as models
@@ -35,9 +36,24 @@ def try_create_task_group(request, project_id) -> (bool, int):
     return False, -1
 
 
-def get_project_page_data(project_id) -> tuple:
-    return tuple((group, tuple(models.Task.objects.by_group_id(group.id).order_by('position')))
-                 for group in models.TaskGroup.objects.by_project_id(project_id).order_by('position'))
+def get_project_page_data(project_id) -> str:
+    project_data = tuple(
+        (
+            group.as_json(),
+            tuple(
+                task.as_json()
+                for task in models.Task.objects.by_group_id(group.id).order_by('position')
+            )
+        )
+        for group in models.TaskGroup.objects.by_project_id(project_id).order_by('position')
+    )
+
+    return json.dumps(project_data)
+
+
+def get_missing_task_groups(project_id, group_ids) -> tuple:
+    missing_groups = models.TaskGroup.objects.by_project_id(project_id).exclude(id__in=group_ids)
+    return tuple(missing_groups)
 
 
 def values_between(values, start, end) -> bool:

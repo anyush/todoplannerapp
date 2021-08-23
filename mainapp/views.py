@@ -29,8 +29,7 @@ def homepage(request):
 @decorators.project_id_is_valid
 @decorators.user_is_project_member
 def project_page(request, project_id):
-    data = services.get_project_page_data(project_id)
-    return render(request, 'project/project.html', context={'data': data, 'project_id': project_id})
+    return render(request, 'project/project.html', context={'project_id': project_id})
 
 
 @login_required

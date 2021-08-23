@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 # Create your models here.
 
@@ -67,6 +69,19 @@ class TaskGroup(models.Model):
 
     objects = TaskGroupManager()
 
+    def as_json(self):
+        return json.dumps(
+            {
+                'id': self.id,
+                'position': self.position,
+                'name': self.name,
+                'project_id': self.project.id,
+                'color': self.color,
+                'task_color': self.task_color,
+                'tag_ids': tuple(self.tags.values('id'))
+            }
+        )
+
 
 class TaskManager(models.Manager):
     def id_is_valid(self, task_id):
@@ -99,3 +114,20 @@ class Task(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
 
     objects = TaskManager()
+
+    def as_json(self):
+        return json.dumps(
+            {
+                'id': self.id,
+                'position': self.position,
+                'name': self.name,
+                'description': self.description,
+                'task_group_id': self.task_group.id,
+                'creation_time': self.creation_time,
+                'deadline_time': self.deadline_time,
+                'creator_id': self.creator.id,
+                'performer_ids': tuple(self.performers.values('id')),
+                'tags': tuple(self.tags.values('id')),
+            },
+            cls=DjangoJSONEncoder
+        )

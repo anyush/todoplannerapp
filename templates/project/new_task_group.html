@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js"></script>
 <script src="{% static 'js/project/new_task_group.js' %}" defer></script>
 {% endblock %}
 
@@ -44,7 +44,7 @@
                             Task
                             <hr />
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                            Nam tincidunt odio sed nisi vestibulum scelerisque. 
+                            Nam tincidunt odio sed nisi vestibulum scelerisque.
                             Maecenas vehicula, lorem ac sollicitudin.
                         </div>
                         <div class="task">
@@ -83,7 +83,8 @@
         {{ form.tags }}
         <br />
 
-        <button type="submit" id="button" class="form_button">Create</button>
+        <button type="button" id="button" class="form_button">Create</button>
+        <button type="submit" id="submit_button" hidden="hidden"></button>
         <input type="hidden" name="next" value="{{ next }}" />
     </div>
 </form>

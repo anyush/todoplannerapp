@@ -34,12 +34,29 @@ class ProjectConsumer(AsyncConsumer):
         pass
 
     async def move_task(self, event):
-        await self.send_message(event['text'])
+        await self.send_group_message(event['text'])
         await self.save_task_move(event)
 
     async def move_task_group(self, event):
-        await self.send_message(event['text'])
+        await self.send_group_message(event['text'])
         await self.save_task_group_move(event)
+
+    async def create_task_group(self, event):
+        await self.send_group_message(json.dumps({
+            'operation': 'add_task_group'
+        }))
+
+    async def get_project_page_data(self, event):
+        project_id = self.scope['url_route']['kwargs']['project_id']
+        project_data = await database_sync_to_async(services.get_project_page_data)(project_id)
+
+        await self.send({
+            'type': 'websocket.send',
+            'text': json.dumps({
+                'operation': 'get_data',
+                'context': project_data,
+            })
+        })
 
     @database_sync_to_async
     def save_task_group_move(self, event):
@@ -97,9 +114,8 @@ class ProjectConsumer(AsyncConsumer):
             moved_task.task_group = new_group
             moved_task.position = new_pos
             moved_task.save()
-            print('task moved!')
 
-    async def send_message(self, text):
+    async def send_group_message(self, text):
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -116,5 +132,7 @@ class ProjectConsumer(AsyncConsumer):
 
     operations = {
         'move_task_group': move_task_group,
-        'move_task': move_task
+        'move_task': move_task,
+        'create_task_group': create_task_group,
+        'get_data': get_project_page_data,
     }

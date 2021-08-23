@@ -17,19 +17,6 @@
 <div style="overflow-x:auto;">
     <table class="task_table">
         <tr id="row">
-            {% for task_group, tasks in data %}
-            <td class="task_group" id="group_{{ task_group.id }}"
-                bkg_clr="{{ task_group.color }}" task_bkg_color="{{ task_group.task_color }}">
-                <div class="task_group_header" draggable="true">{{ task_group.name }}</div>
-                {% for task in tasks %}
-                <div class="task" id="task_{{ task.id }}" draggable="true">
-                    {{ task.name }}
-                </div>
-                {% endfor %}
-                <div class="task" style="height: 5px; opacity:0"></div>
-                <button type="submit" class="task new_task" id="new_task_{{ task_group.id }}">New Task</button>
-            </td>
-            {% endfor %}
             <td class="task_group new_task_group" id="new_group">
                 <a href="{% url 'create_task_group' project_id=project_id %}">
                     <button type="submit" class="task_group_header">New TaskGroup</button>
