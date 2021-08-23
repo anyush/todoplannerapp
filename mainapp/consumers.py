@@ -58,21 +58,25 @@ class ProjectConsumer(AsyncConsumer):
             })
         })
 
+    async def delete_task_group(self, event):
+        await self.send_group_message(event['text'])
+        await self.save_task_group_deletion(event)
+
     @database_sync_to_async
     def save_task_group_move(self, event):
+        project_id = self.scope['url_route']['kwargs']['project_id']
+        data = json.loads(event['text'])
+        moved_group = models.TaskGroup.objects.by_id_or_none(data.get('group_id', -1))
+        if moved_group is None:
+            return
+
+        old_pos = moved_group.position
+        new_pos = data['new_pos']
+        task_group_number = models.TaskGroup.objects.number_in_project(project_id)
+        if old_pos == new_pos or not services.values_between((old_pos, new_pos), -1, task_group_number):
+            return
+
         with transaction.atomic():
-            project_id = self.scope['url_route']['kwargs']['project_id']
-            data = json.loads(event['text'])
-            moved_group = models.TaskGroup.objects.by_id_or_none(data.get('group_id', -1))
-            if moved_group is None:
-                return
-
-            old_pos = moved_group.position
-            new_pos = data['new_pos']
-            task_group_number = models.TaskGroup.objects.number_in_project(project_id)
-            if old_pos == new_pos or not services.values_between((old_pos, new_pos), -1, task_group_number):
-                return
-
             if old_pos < new_pos:
                 affected_groups = models.TaskGroup.objects.position_in_project_between(project_id, old_pos, new_pos + 1)
                 affected_groups.update(position=F('position') - 1)
@@ -84,29 +88,29 @@ class ProjectConsumer(AsyncConsumer):
 
     @database_sync_to_async
     def save_task_move(self, event):
+        data = json.loads(event['text'])
+        moved_task = models.Task.objects.by_id_or_none(data.get('task_id', -1))
+        if moved_task is None:
+            return
+
+        old_group = moved_task.task_group
+        new_group = models.TaskGroup.objects.by_id_or_none(data.get('new_group_id', -1))
+        if new_group is None:
+            return
+
+        old_pos = moved_task.position
+        new_pos = data.get('new_pos', None)
+        if new_pos is None or (old_group.id == new_group.id and old_pos == new_pos):
+            return
+
+        task_number_old_task_group = old_group.tasks.count()
+        task_number_new_task_group = new_group.tasks.count()
+
+        if not 0 <= old_pos <= task_number_old_task_group or \
+                not 0 <= new_pos <= task_number_new_task_group:
+            return
+
         with transaction.atomic():
-            data = json.loads(event['text'])
-            moved_task = models.Task.objects.by_id_or_none(data.get('task_id', -1))
-            if moved_task is None:
-                return
-
-            old_group = moved_task.task_group
-            new_group = models.TaskGroup.objects.by_id_or_none(data.get('new_group_id', -1))
-            if new_group is None:
-                return
-
-            old_pos = moved_task.position
-            new_pos = data.get('new_pos', None)
-            if new_pos is None or (old_group.id == new_group.id and old_pos == new_pos):
-                return
-
-            task_number_old_task_group = old_group.tasks.count()
-            task_number_new_task_group = new_group.tasks.count()
-
-            if not 0 <= old_pos <= task_number_old_task_group or \
-                    not 0 <= new_pos <= task_number_new_task_group:
-                return
-
             models.Task.objects.position_in_group_greater_than(old_group.id, old_pos)\
                 .update(position=F('position') - 1)
             models.Task.objects.position_in_group_greater_than(new_group.id, new_pos-1)\
@@ -114,6 +118,15 @@ class ProjectConsumer(AsyncConsumer):
             moved_task.task_group = new_group
             moved_task.position = new_pos
             moved_task.save()
+
+    @database_sync_to_async
+    def save_task_group_deletion(self, event):
+        data = json.loads(event['text'])
+        group = models.TaskGroup.objects.by_id_or_none(data.get('group_id', -1))
+        if group is None:
+            return
+
+        group.delete()
 
     async def send_group_message(self, text):
         await self.channel_layer.group_send(
@@ -135,4 +148,5 @@ class ProjectConsumer(AsyncConsumer):
         'move_task': move_task,
         'create_task_group': create_task_group,
         'get_data': get_project_page_data,
+        'delete_task_group': delete_task_group,
     }

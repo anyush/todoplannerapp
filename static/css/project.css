@@ -41,3 +41,32 @@
 .new_task {
     background-color: white;
 }
+
+.headerButton {
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+    float: right;
+    background-size: 100% 100%;
+    filter: brightness(115%);
+}
+
+#cancelDelete {
+    background-color: #9da4b0;
+    color: white;
+    padding: 14px 10px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 35%;
+}
+
+#confirmDelete {
+    background-color: #db1d30;
+    color: white;
+    padding: 14px 10px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 35%;
+}

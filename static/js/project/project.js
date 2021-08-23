@@ -1,6 +1,10 @@
 const row = document.getElementById('row')
 const hidden_col = document.getElementById('hidden_col')
+const modal = document.getElementById('modal')
+const cancelDeleteBtn = document.getElementById('cancelDelete')
+const confirmDeleteBtn = document.getElementById('confirmDelete')
 
+const staticFilesSource = '/static/'
 
 var loc = window.location
 var wsStart = 'ws://'
@@ -9,6 +13,44 @@ if (loc.protocol == 'https:') {
 }
 var endpoint = wsStart + loc.host + loc.pathname
 var socket = new ReconnectingWebSocket(endpoint)
+
+var deletedTaskGroup = null;
+var deletedTask = null;
+
+window.onclick = function (event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+cancelDeleteBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    deletedTaskGroup = null;
+    deletedTask = null;
+})
+
+confirmDeleteBtn.addEventListener('click', () => {
+    if (!(deletedTaskGroup == null ^ deletedTask == null)) {
+        cancelDeleteBtn.click();
+        return;
+    }
+
+    if (deletedTaskGroup != null) {
+        socket.send(JSON.stringify({
+            'operation': 'delete_task_group',
+            'group_id': deletedTaskGroup.getAttribute('id').split('_')[1]
+        }));
+        row.removeChild(deletedTaskGroup);
+    } else {
+        socket.send(JSON.stringify({
+            'operation': 'delete_task',
+            'task_id': deletedTask.getAttribute('id').split('_')[1]
+        }));
+        deletedTask.parentNode.removeChild(deletedTask);
+    }
+
+    cancelDeleteBtn.click();
+})
 
 row.addEventListener('dragover', e => {
     e.preventDefault()
@@ -106,12 +148,25 @@ function createGroupElement(groupData) {
     return groupElement
 }
 
-function createHeaderElement(name) {
+function createHeaderElement(name, parentNode) {
     var headerElement = document.createElement('div')
     headerElement.classList.add('task_group_header')
     headerElement.setAttribute('draggable', 'true')
-    headerElement.innerText = name
-    
+    headerElement.innerHTML = name;
+
+    deleteButtonElement = document.createElement('button');
+    deleteButtonElement.classList.add('headerButton');
+    deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
+    deleteButtonElement.addEventListener('click', () => {
+        modal.style.display = 'block';
+        var t = document.getElementById('deleteTitle');
+        t.innerText = 'Delete Task Group';
+        var q = document.getElementById('deleteGroupQ');
+        q.innerText = 'Are you sure you want to delete "' + name + '"?';
+        deletedTaskGroup = parentNode;
+    })
+    headerElement.appendChild(deleteButtonElement);
+
     headerElement.addEventListener('dragstart', () => {
         headerElement.parentNode.classList.add('dragging_group')
     })
@@ -176,7 +231,7 @@ var messageHandlerGetProjectData = function (data) {
 
         var groupElement = createGroupElement(groupData)
 
-        var headerElement = createHeaderElement(groupData['name'])
+        var headerElement = createHeaderElement(groupData['name'], groupElement)
         groupElement.appendChild(headerElement)
 
         tasks.forEach(task => {
@@ -230,11 +285,19 @@ var messageHandlerMoveTask = function (data) {
     moved_task.style.backgroundColor = moved_task.parentElement.getAttribute('task_bkg_color')
 }
 
+var messageHandlerDeleteTaskGroup = function (data) {
+    var deletedGroup = document.getElementById('group_' + data['group_id']);
+
+    if (deletedGroup != null)
+        deletedGroup.parentNode.removeChild(deletedGroup);
+}
+
 const messageHandlers = {
     'get_data': messageHandlerGetProjectData,
     'move_task_group': messageHandlerMoveTaskGroup,
     'move_task': messageHandlerMoveTask,
     'add_task_group': messageHandlerAddTaskGroup,
+    'delete_task_group': messageHandlerDeleteTaskGroup,
 }
 
 socket.onmessage = function (e) {
