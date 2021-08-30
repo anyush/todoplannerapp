@@ -11,7 +11,6 @@ application = ProtocolTypeRouter({
             URLRouter(
                 [
                     url(r'^projects/(?P<project_id>\d+)/$', ProjectConsumer.as_asgi()),
-                    url(r'^projects/(?P<project_id>\d+)/new_task_group/$', ProjectConsumer.as_asgi()),
                 ]
             )
         )

@@ -42,21 +42,21 @@ class ProjectCreationForm(ModelForm):
         fields = ('name', 'description', 'members', 'tags')
 
 
-class TaskGroupCreationForm(ModelForm):
+class TaskGroupForm(ModelForm):
     DEFAULT_COLOR = '#93b3db'
     DEFAULT_TASK_COLOR = '#ebd06e'
 
-    name = forms.CharField(widget=TextInput(attrs={'class': 'form_field'}))
-    color = forms.CharField(widget=forms.TextInput(attrs={'type': 'color'}), initial=DEFAULT_COLOR)
-    task_color = forms.CharField(widget=forms.TextInput(attrs={'type': 'color'}), initial=DEFAULT_TASK_COLOR)
+    name = forms.CharField(widget=TextInput(attrs={'id': 'modifiableGroupName', 'class': 'modalField'}))
+    color = forms.CharField(widget=forms.TextInput(attrs={'id': 'modifiableGroupColor', 'type': 'color',
+                                                          'default': DEFAULT_COLOR}),
+                            initial=DEFAULT_COLOR)
+    task_color = forms.CharField(widget=forms.TextInput(attrs={'id': 'modifiableGroupTaskColor', 'type': 'color',
+                                                               'default': DEFAULT_TASK_COLOR}),
+                                 initial=DEFAULT_TASK_COLOR)
     tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())
-    tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'form_field'}), choices=tags_choices,
+    tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'modalField'}), choices=tags_choices,
                                      required=False)
 
     class Meta:
         model = models.TaskGroup
         fields = ('name', 'color', 'task_color', 'tags')
-
-    def __init__(self, *args, project_id, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.project_id = project_id

@@ -1,28 +1,448 @@
-const row = document.getElementById('row')
-const hidden_col = document.getElementById('hidden_col')
-const modal = document.getElementById('modal')
-const cancelDeleteBtn = document.getElementById('cancelDelete')
-const confirmDeleteBtn = document.getElementById('confirmDelete')
+// constants
+const staticFilesSource = '/static/';
 
-const staticFilesSource = '/static/'
-
-var loc = window.location
-var wsStart = 'ws://'
-if (loc.protocol == 'https:') {
-    wsStart = 'wss://'
-}
-var endpoint = wsStart + loc.host + loc.pathname
-var socket = new ReconnectingWebSocket(endpoint)
-
+// grobal variables
 var deletedTaskGroup = null;
 var deletedTask = null;
 
+// main elements
+const row = document.getElementById('row');
+const newGroupBtn = document.getElementById('newGroupBtn');
+const hiddenCol = document.getElementById('hiddenCol');
+
+// modal elements
+const modal = document.getElementById('modal');
+const modalBlocks = document.querySelectorAll('.modalContent');
+const modalBlockModifyGroup = document.getElementById('groupCreation');
+const modalBlockDeleteGroup = document.getElementById('groupDeletion');
+//// task group form
+const modifiableGroupModalBlockTitle = document.getElementById('modifiableGroupModalBlockTitle');
+const modifiableGroupId = document.getElementById('modifiableGroupId');
+const modifiableGroupTitle = document.getElementById('modifiableGroupName');
+const modifiableGroupColorPicker = document.getElementById('modifiableGroupColor');
+const modifiableGroupTaskColorPicker = document.getElementById('modifiableGroupTaskColor');
+const modifiableGroupConfirmBtn = document.getElementById('modifiableGroupConfirm');
+const modifiableGroupModifyBtn = document.getElementById('modifiableGroupModify');
+const modifiableGroupCancelBtn = document.getElementById('modifiableGroupCancel');
+
+
+const modifiableGroup = document.getElementById('modifiableGroup');
+const modifiableGroupHeader = document.getElementById('modifiableGroupHeader');
+const modifiableGroupTasks = modifiableGroup.querySelectorAll('.task');
+//// task group deletion
+const deleteTitle = document.getElementById('deleteTitle');
+const deleteQuestion = document.getElementById('deleteQuestion');
+const cancelDeleteBtn = document.getElementById('cancelDelete');
+const confirmDeleteBtn = document.getElementById('confirmDelete');
+
+
+
+// socket configuration
+var loc = window.location;
+var wsStart = 'ws://';
+if (loc.protocol == 'https:') {
+    wsStart = 'wss://';
+}
+var endpoint = wsStart + loc.host + loc.pathname;
+var socket = new ReconnectingWebSocket(endpoint);
+
+socket.onmessage = function (e) {
+    // console.log('message', e);
+    data = JSON.parse(e.data);
+    operation = data['operation'];
+    context = JSON.parse(data['context']);
+    messageHandlers[operation](context);
+}
+
+socket.onopen = function (e) {
+    // console.log('open', e);
+    socket.send(JSON.stringify({
+        'operation': 'get_data',
+        'context': '{}'
+    }));
+}
+
+socket.onclose = function (e) {
+    // console.log('close', e);
+}
+
+socket.onerror = function (e) {
+    // console.log('error', e);
+}
+
+
+
+// socket message handlers
+function removeAllTaskGroups() {
+    while (row.firstChild != newGroupBtn.parentNode) {
+        row.removeChild(row.firstChild);
+    }
+}
+
+var messageHandlerGetProjectData = function (context) {
+    context = context.reverse();
+    removeAllTaskGroups();
+
+    context.forEach(pair => {
+        var groupData = JSON.parse(pair[0]);
+        var tasks = pair[1];
+
+        var groupElement = createGroupElement(groupData);
+
+        var headerElement = createHeaderElement(groupData['name'], groupElement);
+        groupElement.appendChild(headerElement);
+
+        tasks.forEach(task => {
+            taskData = JSON.parse(task);
+            var taskElement = createTaskElement(taskData, groupData['task_color']);
+            groupElement.appendChild(taskElement);
+        });
+
+        var newTaskElement = createNewTaskElement(groupData['id']);
+        groupElement.appendChild(newTaskElement);
+
+        row.prepend(groupElement);
+    });
+}
+
+const messageHandlerModifyTaskGroup = function (context) {
+    var modifiedGroup = document.getElementById('group_' + context['group_id']);
+    if (modifiedGroup == null) {
+        socket.send(JSON.stringify({
+            'operation': 'get_data',
+            'context': '{}'
+        }));
+        return;
+    }
+
+    modifiedGroup.querySelector('.headerText').innerText = context['name'];
+    modifiedGroup.setAttribute('bkgColor', context['color']);
+    modifiedGroup.setAttribute('taskBkgColor', context['task_color']);
+    modifiedGroup.style.backgroundColor = context['color'];
+    var tasks = modifiedGroup.querySelectorAll('.task:not(.newTask)');
+    tasks.forEach(task => {
+        task.style.backgroundColor = context['task_color'];
+    });
+}
+
+var messageHandlerMoveTaskGroup = function (context) {
+    if (context['new_pos'] >= row.childElementCount - 1)
+        return;
+
+    var movedGroup = document.getElementById('group_' + context['group_id']);
+    if ([...movedGroup.parentNode.children].indexOf(movedGroup) >= context['new_pos'])
+        var groupOnPos = row.children[context['new_pos']];
+    else
+        var groupOnPos = row.children[context['new_pos'] + 1];
+    if (movedGroup != groupOnPos)
+        row.insertBefore(movedGroup, groupOnPos);
+}
+
+var messageHandlerMoveTask = function (context) {
+    var movedTask = document.getElementById('task_' + context['task_id']);
+    var newGroup = document.getElementById('group_' + context['new_group_id']);
+
+    if (context['new_pos'] < newGroup.childElementCount - 1) {
+        if (movedTask.parentNode == newGroup && [...movedTask.parentNode.children].indexOf(movedTask) < context['new_pos'] + 1)
+            var taskOnPosition = newGroup.children[context['new_pos'] + 2];
+        else
+            var taskOnPosition = newGroup.children[context['new_pos'] + 1];
+        if (movedTask.parentNode == newGroup && taskOnPosition == movedTask)
+            return;
+
+        newGroup.insertBefore(movedTask, taskOnPosition);
+    } else {
+        newGroup.appendChild(movedTask);
+    }
+    movedTask.style.backgroundColor = movedTask.parentElement.getAttribute('taskBkgColor');
+}
+
+var messageHandlerDeleteTaskGroup = function (context) {
+    var deletedGroup = document.getElementById('group_' + context['group_id']);
+
+    if (deletedGroup != null)
+        deletedGroup.parentNode.removeChild(deletedGroup);
+}
+
+const messageHandlers = {
+    'get_data': messageHandlerGetProjectData,
+    'modify_task_group': messageHandlerModifyTaskGroup,
+    'move_task_group': messageHandlerMoveTaskGroup,
+    'move_task': messageHandlerMoveTask,
+    'delete_task_group': messageHandlerDeleteTaskGroup,
+}
+
+
+
+// window configuration
 window.onclick = function (event) {
     if (event.target == modal) {
         modal.style.display = "none";
     }
 }
 
+window.onload = function () {
+    modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
+    modifiableGroupTasks.forEach(task => {
+        task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
+    })
+}
+
+
+
+// page elements generation
+function createGroupElement(groupData) {
+    var groupElement = document.createElement('td');
+    groupElement.id = 'group_' + groupData['id'];
+    groupElement.classList.add('taskGroup');
+    groupElement.setAttribute('bkgColor', groupData['color']);
+    groupElement.setAttribute('taskBkgColor', groupData['task_color']);
+    groupElement.style.backgroundColor = groupData['color'];
+
+    groupElement.addEventListener('dragover', e => {
+        e.preventDefault();
+        const task = document.querySelector('.dragging');
+        if (task == null)
+            return;
+        var afterElement = getTaskDragAfterElement(groupElement, e.clientY);
+        if (afterElement == null)
+            afterElement = document.getElementById('newTask_' + groupData['id']);
+        groupElement.insertBefore(task, afterElement);
+        task.style.backgroundColor = task.parentElement.getAttribute('taskBkgColor');
+    });
+
+    return groupElement;
+}
+
+function hideModalContent() {
+    modalBlocks.forEach((block) => {
+        block.style.display = 'none';
+    });
+}
+
+function createHeaderDeleteBtn(groupNode) {
+    var deleteButtonElement = document.createElement('button');
+    deleteButtonElement.classList.add('headerButton');
+    deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
+    deleteButtonElement.addEventListener('click', () => {
+        hideModalContent();
+        modal.style.display = 'block';
+        modalBlockDeleteGroup.style.display = 'block';
+
+        deleteTitle.innerText = 'Delete Task Group';
+        deleteQuestion.innerText = 'Are you sure you want to delete "' + deleteButtonElement.parentNode.innerText + '"?';
+        deletedTaskGroup = groupNode;
+    });
+
+    return deleteButtonElement;
+}
+
+function createHeaderModifyBtn() {
+    var modifyButtonElement = document.createElement('button');
+    modifyButtonElement.classList.add('headerButton');
+    modifyButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/settingsButton.png)';
+    modifyButtonElement.addEventListener('click', () => {
+        hideModalContent();
+
+        modal.style.display = 'block';
+        modalBlockModifyGroup.style.display = 'block';
+
+        modifiableGroupModalBlockTitle.innerText = 'Modify Task Group';
+        modifiableGroupTitle.value = modifyButtonElement.parentNode.innerText;
+        modifiableGroupHeader.innerText = modifyButtonElement.parentNode.innerText;
+        modifiableGroupColorPicker.value = modifyButtonElement.parentNode.parentNode.getAttribute('bkgColor');
+        modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
+        modifiableGroupTaskColorPicker.value = modifyButtonElement.parentNode.parentNode.getAttribute('taskBkgColor');
+        modifiableGroupTasks.forEach(task => {
+            task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
+        });
+        modifiableGroupConfirmBtn.style.display = 'none';
+        modifiableGroupModifyBtn.style.display = 'inline';
+        modifiableGroupId.value = parseInt(modifyButtonElement.parentNode.parentNode.getAttribute('id').split('_')[1]);
+    });
+
+    return modifyButtonElement;
+}
+
+function createHeaderElement(name, groupNode) {
+    var headerElement = document.createElement('div');
+    headerElement.classList.add('taskGroupHeader');
+    headerElement.setAttribute('draggable', 'true');
+    headerElement.innerHTML = '<span class="headerText">' + name + '</span>';
+
+    var deleteButtonElement = createHeaderDeleteBtn(groupNode);
+    headerElement.appendChild(deleteButtonElement);
+
+    var settingsButtonElement = createHeaderModifyBtn();
+    headerElement.appendChild(settingsButtonElement);
+
+    headerElement.addEventListener('dragstart', () => {
+        headerElement.parentNode.classList.add('draggingGroup');
+    });
+
+    headerElement.addEventListener('dragend', () => {
+        headerElement.parentNode.classList.remove('draggingGroup');
+        socket.send(JSON.stringify({
+            'operation': 'move_task_group',
+            'context': JSON.stringify({
+                'group_id': parseInt(headerElement.parentNode.getAttribute('id').split('_')[1]),
+                'new_pos': parseInt([...headerElement.parentNode.parentNode.children].indexOf(headerElement.parentNode))
+            })
+        }));
+    });
+
+    return headerElement;
+}
+
+function createTaskElement(taskData, color) {
+    var taskElement = document.createElement('div');
+    taskElement.id = 'task_' + taskData['id'];
+    taskElement.classList.add('task');
+    taskElement.setAttribute('draggable', 'true');
+    taskElement.style.backgroundColor = color;
+    taskElement.innerHTML = taskData['name'] + '<hr />' + taskData['description'];
+
+    taskElement.addEventListener('dragstart', () => {
+        taskElement.classList.add('dragging');
+    });
+
+    taskElement.addEventListener('dragend', () => {
+        taskElement.classList.remove('dragging');
+        socket.send(JSON.stringify({
+            'operation': 'move_task',
+            'context': JSON.stringify({
+                'task_id': parseInt(taskElement.getAttribute('id').split('_')[1]),
+                'new_group_id': parseInt(taskElement.parentNode.getAttribute('id').split('_')[1]),
+                'new_pos': parseInt([...taskElement.parentNode.children].indexOf(taskElement) - 1)
+            })
+        }));
+    });
+
+    return taskElement;
+}
+
+function createNewTaskElement(groupId) {
+    var newTaskElement = document.createElement('button');
+    newTaskElement.type = 'submit';
+    newTaskElement.id = 'newTask_' + groupId;
+    newTaskElement.classList.add('task');
+    newTaskElement.classList.add('newTask');
+    newTaskElement.innerText = 'New Task';
+
+    return newTaskElement;
+}
+
+
+
+// drag-and-drop logic
+row.addEventListener('dragover', e => {
+    e.preventDefault();
+    var group = document.querySelector('.draggingGroup');
+    if (group == null)
+        return;
+    var afterGroup = getGroupDragAfterElement(e.clientX);
+    if (afterGroup == null)
+        row.insertBefore(group, newGroupBtn.parentNode);
+    else
+        row.insertBefore(group, afterGroup);
+})
+
+function getGroupDragAfterElement(x) {
+    var draggableElements = [...row.querySelectorAll('.taskGroup:not(.draggingGroup):not(.newTaskGroup):not(#modifiableGroup)')];
+
+    return draggableElements.reduce((closest, child) => {
+        var box = child.getBoundingClientRect();
+        var offset = x - box.right + box.width / 2;
+        if (offset < 0 && offset > closest.offset)
+            return { offset: offset, element: child };
+        else
+            return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function getTaskDragAfterElement(group, y) {
+    const draggableElements = [...group.querySelectorAll('.task:not(.dragging):not(.modifiableGroupTask)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset)
+            return { offset: offset, element: child };
+        else
+            return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+
+
+// task group creation/modification form logic
+newGroupBtn.addEventListener('click', e => {
+    hideModalContent();
+    modal.style.display = 'block';
+    modalBlockModifyGroup.style.display = 'block';
+
+    modifiableGroupModalBlockTitle.innerText = 'Create new Task Group';
+    modifiableGroupTitle.value = '';
+    modifiableGroupHeader.innerText = 'Task Group';
+    modifiableGroupColorPicker.value = modifiableGroupColorPicker.getAttribute('default');
+    modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
+    modifiableGroupTaskColorPicker.value = modifiableGroupTaskColorPicker.getAttribute('default');
+    modifiableGroupTasks.forEach(task => {
+        task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
+    });
+    modifiableGroupConfirmBtn.style.display = 'inline';
+    modifiableGroupModifyBtn.style.display = 'none';
+});
+
+modifiableGroupTitle.addEventListener('input', e => {
+    if (modifiableGroupTitle.value != '')
+        modifiableGroupHeader.innerText = modifiableGroupTitle.value;
+    else
+        modifiableGroupHeader.innerText = 'Task Group';
+});
+
+modifiableGroupColorPicker.addEventListener('input', e => {
+    modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
+});
+
+modifiableGroupTaskColorPicker.addEventListener('input', e => {
+    modifiableGroupTasks.forEach(task => {
+        task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
+    });
+});
+
+modifiableGroupCancelBtn.addEventListener('click', e => {
+    modal.style.display = 'none';
+});
+
+modifiableGroupModifyBtn.addEventListener('click', e => {
+    socket.send(JSON.stringify({
+        'operation': 'modify_task_group',
+        'context': JSON.stringify({
+            'group_id': parseInt(modifiableGroupId.value),
+            'name': modifiableGroupTitle.value,
+            'color': modifiableGroupColorPicker.value,
+            'task_color': modifiableGroupTaskColorPicker.value
+        })
+    }));
+    modal.style.display = 'none';
+});
+
+modifiableGroupConfirmBtn.addEventListener('click', e => {
+    socket.send(JSON.stringify({
+        'operation': 'create_task_group',
+        'context': JSON.stringify({
+            'name': modifiableGroupTitle.value,
+            'color': modifiableGroupColorPicker.value,
+            'task_color': modifiableGroupTaskColorPicker.value
+        })
+    }));
+    modal.style.display = 'none';
+});
+
+
+
+// task group/task deletion logic
 cancelDeleteBtn.addEventListener('click', () => {
     modal.style.display = 'none';
     deletedTaskGroup = null;
@@ -38,61 +458,27 @@ confirmDeleteBtn.addEventListener('click', () => {
     if (deletedTaskGroup != null) {
         socket.send(JSON.stringify({
             'operation': 'delete_task_group',
-            'group_id': deletedTaskGroup.getAttribute('id').split('_')[1]
+            'context': JSON.stringify({
+                'group_id': parseInt(deletedTaskGroup.getAttribute('id').split('_')[1])
+            })
         }));
         row.removeChild(deletedTaskGroup);
     } else {
         socket.send(JSON.stringify({
             'operation': 'delete_task',
-            'task_id': deletedTask.getAttribute('id').split('_')[1]
+            'context': JSON.stringify({
+                'task_id': parseInt(deletedTask.getAttribute('id').split('_')[1])
+            })
         }));
         deletedTask.parentNode.removeChild(deletedTask);
     }
 
     cancelDeleteBtn.click();
-})
+});
 
-row.addEventListener('dragover', e => {
-    e.preventDefault()
-    const group = document.querySelector('.dragging_group')
-    if (group == null)
-        return;
-    const afterGroup = getGroupDragAfterElement(e.clientX)
-    if (afterGroup == null) {
-        row.insertBefore(group, hidden_col)
-    } else {
-        row.insertBefore(group, afterGroup)
-    }
-})
 
-function getGroupDragAfterElement(x) {
-    const draggableElements = [...row.querySelectorAll('.task_group:not(.dragging_group')]
 
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect()
-        const offset = x - box.right + box.width / 2
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child }
-        } else {
-            return closest
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element
-}
-
-function getTaskDragAfterElement(group, y) {
-    const draggableElements = [...group.querySelectorAll('.task:not(.dragging)')]
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect()
-        const offset = y - box.top - box.height / 2
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child }
-        } else {
-            return closest
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element
-}
-
+// secondary functions
 function sendAJAX(data, url) {
     var xhttp = new XMLHttpRequest();
     xhttp.open("POST", url, true);
@@ -116,207 +502,4 @@ function getCookie(cname) {
         }
     }
     return "";
-}
-
-function removeAllTaskGroups() {
-    while (row.firstChild != document.getElementById('new_group')) {
-        row.removeChild(row.firstChild);
-    }
-}
-
-
-function createGroupElement(groupData) {
-    var groupElement = document.createElement('td')
-    groupElement.id = 'group_' + groupData['id']
-    groupElement.classList.add('task_group')
-    groupElement.setAttribute('task_bkg_color', groupData['task_color'])
-    groupElement.style.backgroundColor = groupData['color']
-
-
-    groupElement.addEventListener('dragover', e => {
-        e.preventDefault()
-        const task = document.querySelector('.dragging')
-        if (task == null)
-            return;
-        var afterElement = getTaskDragAfterElement(groupElement, e.clientY)
-        if (afterElement == null)
-            afterElement = document.getElementById('new_task_' + groupData['id'])
-        groupElement.insertBefore(task, afterElement)
-        task.style.backgroundColor = task.parentElement.getAttribute('task_bkg_color')
-    })
-
-    return groupElement
-}
-
-function createHeaderElement(name, parentNode) {
-    var headerElement = document.createElement('div')
-    headerElement.classList.add('task_group_header')
-    headerElement.setAttribute('draggable', 'true')
-    headerElement.innerHTML = name;
-
-    deleteButtonElement = document.createElement('button');
-    deleteButtonElement.classList.add('headerButton');
-    deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
-    deleteButtonElement.addEventListener('click', () => {
-        modal.style.display = 'block';
-        var t = document.getElementById('deleteTitle');
-        t.innerText = 'Delete Task Group';
-        var q = document.getElementById('deleteGroupQ');
-        q.innerText = 'Are you sure you want to delete "' + name + '"?';
-        deletedTaskGroup = parentNode;
-    })
-    headerElement.appendChild(deleteButtonElement);
-
-    headerElement.addEventListener('dragstart', () => {
-        headerElement.parentNode.classList.add('dragging_group')
-    })
-
-    headerElement.addEventListener('dragend', () => {
-        headerElement.parentNode.classList.remove('dragging_group')
-        socket.send(JSON.stringify(
-            {
-                'operation': 'move_task_group',
-                'group_id': headerElement.parentNode.getAttribute('id').split('_')[1],
-                'new_pos': [...headerElement.parentNode.parentNode.children].indexOf(headerElement.parentNode)
-            }));
-    })
-
-    return headerElement
-}
-
-function createTaskElement(taskData, color) {
-    var taskElement = document.createElement('div')
-    taskElement.id = 'task_' + taskData['id']
-    taskElement.classList.add('task')
-    taskElement.setAttribute('draggable', 'true')
-    taskElement.style.backgroundColor = color
-    taskElement.innerHTML = taskData['name'] + '<hr />' + taskData['description']
-
-    taskElement.addEventListener('dragstart', () => {
-        taskElement.classList.add('dragging')
-    })
-
-    taskElement.addEventListener('dragend', () => {
-        taskElement.classList.remove('dragging')
-        socket.send(JSON.stringify(
-            {
-                'operation': 'move_task',
-                'task_id': taskElement.getAttribute('id').split('_')[1],
-                'new_group_id': taskElement.parentNode.getAttribute('id').split('_')[1],
-                'new_pos': [...taskElement.parentNode.children].indexOf(taskElement) - 1
-            }));
-    })
-
-    return taskElement
-}
-
-function createNewTaskElement(groupId) {
-    var newTaskElement = document.createElement('button')
-    newTaskElement.type = 'submit'
-    newTaskElement.id = 'new_task_' + groupId
-    newTaskElement.classList.add('task')
-    newTaskElement.classList.add('new_task')
-    newTaskElement.innerText = 'New Task'
-
-    return newTaskElement
-}
-
-var messageHandlerGetProjectData = function (data) {
-    data = JSON.parse(data['context']).reverse()
-    removeAllTaskGroups()
-    
-    data.forEach(pair => {
-        var groupData = JSON.parse(pair[0])
-        var tasks = pair[1]
-
-        var groupElement = createGroupElement(groupData)
-
-        var headerElement = createHeaderElement(groupData['name'], groupElement)
-        groupElement.appendChild(headerElement)
-
-        tasks.forEach(task => {
-            taskData = JSON.parse(task)
-            var taskElement = createTaskElement(taskData, groupData['task_color'])
-            groupElement.appendChild(taskElement)
-        })
-
-        var newTaskElement = createNewTaskElement(groupData['id'])
-        groupElement.appendChild(newTaskElement)
-
-        row.prepend(groupElement)
-    })
-}
-
-var messageHandlerAddTaskGroup = function () {
-    socket.send({
-        'operation': 'get_project_data'
-    })
-}
-
-var messageHandlerMoveTaskGroup = function (data) {
-    if (data['new_pos'] >= row.childElementCount - 1)
-        return
-
-    var moved_group = document.getElementById('group_' + data['group_id'])
-    if ([...moved_group.parentNode.children].indexOf(moved_group) >= data['new_pos'])
-        var group_on_pos = row.children[data['new_pos']]
-    else
-        var group_on_pos = row.children[data['new_pos'] + 1]
-    if (moved_group != group_on_pos)
-        row.insertBefore(moved_group, group_on_pos)
-}
-
-var messageHandlerMoveTask = function (data) {
-    var moved_task = document.getElementById('task_' + data['task_id'])
-    var new_group = document.getElementById('group_' + data['new_group_id'])
-
-    if (data['new_pos'] < new_group.childElementCount - 1) {
-        if (moved_task.parentNode == new_group && [...moved_task.parentNode.children].indexOf(moved_task) < data['new_pos'] + 1)
-            var task_on_position = new_group.children[data['new_pos'] + 2]
-        else
-            var task_on_position = new_group.children[data['new_pos'] + 1]
-        if (moved_task.parentNode == new_group && task_on_position == moved_task)
-            return
-
-        new_group.insertBefore(moved_task, task_on_position)
-    } else {
-        new_group.appendChild(moved_task)
-    }
-    moved_task.style.backgroundColor = moved_task.parentElement.getAttribute('task_bkg_color')
-}
-
-var messageHandlerDeleteTaskGroup = function (data) {
-    var deletedGroup = document.getElementById('group_' + data['group_id']);
-
-    if (deletedGroup != null)
-        deletedGroup.parentNode.removeChild(deletedGroup);
-}
-
-const messageHandlers = {
-    'get_data': messageHandlerGetProjectData,
-    'move_task_group': messageHandlerMoveTaskGroup,
-    'move_task': messageHandlerMoveTask,
-    'add_task_group': messageHandlerAddTaskGroup,
-    'delete_task_group': messageHandlerDeleteTaskGroup,
-}
-
-socket.onmessage = function (e) {
-    // console.log('message', e)
-    data = JSON.parse(e.data)
-    messageHandlers[data['operation']](data)
-}
-
-socket.onopen = function (e) {
-    // console.log('open', e)
-    socket.send(JSON.stringify({
-        'operation': 'get_data'
-    }))
-}
-
-socket.onclose = function (e) {
-    // console.log('close', e)
-}
-
-socket.onerror = function (e) {
-    // console.log('error', e)
 }

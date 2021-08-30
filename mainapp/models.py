@@ -26,6 +26,12 @@ class ProjectManager(models.Manager):
             return project.members.filter(id=user_id).exists()
         return False
 
+    def task_group_belongs_to_project(self, project_id, group_id):
+        return self.filter(id=project_id, task_groups__id=group_id)
+
+    def task_belongs_to_project(self, project_id, task_id):
+        return self.filter(id=project_id, task_groups__tasks__id=task_id).exists()
+
 
 class Project(models.Model):
     name = models.CharField(max_length=50)
@@ -127,7 +133,7 @@ class Task(models.Model):
                 'deadline_time': self.deadline_time,
                 'creator_id': self.creator.id,
                 'performer_ids': tuple(self.performers.values('id')),
-                'tags': tuple(self.tags.values('id')),
+                'tag_ids': tuple(self.tags.values('id')),
             },
             cls=DjangoJSONEncoder
         )

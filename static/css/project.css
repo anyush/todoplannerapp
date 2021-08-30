@@ -2,7 +2,7 @@
     width: 80%;
 }
 
-.task_table {
+.taskTable {
     border-radius: 10px;
     width: 100%;
     height: max-content;
@@ -11,7 +11,7 @@
     table-layout: auto;
 }
 
-.task_group {
+.taskGroup {
     vertical-align: top;
     padding: 0;
     border-radius: 10px;
@@ -20,11 +20,11 @@
     margin: 0;
 }
 
-.new_task_group {
+.newTaskGroup {
     border: none;
 }
 
-.task_group_header {
+.taskGroupHeader {
     width: 200px;
     height: 20px;
     border-radius: 10px;
@@ -38,7 +38,7 @@
     background-color: #ebd06e;
 }
 
-.new_task {
+.newTask {
     background-color: white;
 }
 
@@ -49,24 +49,4 @@
     float: right;
     background-size: 100% 100%;
     filter: brightness(115%);
-}
-
-#cancelDelete {
-    background-color: #9da4b0;
-    color: white;
-    padding: 14px 10px;
-    margin: 8px 0;
-    border: none;
-    cursor: pointer;
-    width: 35%;
-}
-
-#confirmDelete {
-    background-color: #db1d30;
-    color: white;
-    padding: 14px 10px;
-    margin: 8px 0;
-    border: none;
-    cursor: pointer;
-    width: 35%;
 }

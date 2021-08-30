@@ -1,4 +1,6 @@
 from django.contrib.auth import login
+from django.db import transaction
+from django.db.models import F
 import json
 
 import mainapp.forms as forms
@@ -24,18 +26,6 @@ def try_create_project(request) -> (bool, int):
     return False, -1
 
 
-def try_create_task_group(request, project_id) -> (bool, int):
-    form = forms.TaskGroupCreationForm(request.POST, project_id=project_id)
-    project = models.Project.objects.by_id_or_none(project_id)
-    if form.is_valid() and project_id is not None:
-        group = form.save(commit=False)
-        group.project = project
-        group.position = models.TaskGroup.objects.number_in_project(project_id)
-        group.save()
-        return True, group.id
-    return False, -1
-
-
 def get_project_page_data(project_id) -> str:
     project_data = tuple(
         (
@@ -51,16 +41,71 @@ def get_project_page_data(project_id) -> str:
     return json.dumps(project_data)
 
 
-def get_missing_task_groups(project_id, group_ids) -> tuple:
-    missing_groups = models.TaskGroup.objects.by_project_id(project_id).exclude(id__in=group_ids)
-    return tuple(missing_groups)
+def create_task_group(context_struct) -> None:
+    models.TaskGroup.objects.create(
+        position=models.TaskGroup.objects.number_in_project(context_struct.project_id),
+        project=models.Project.objects.by_id_or_none(context_struct.project_id),
+        name=context_struct.name,
+        color=context_struct.color,
+        task_color=context_struct.task_color
+    )
 
 
-def values_between(values, start, end) -> bool:
-    """
-    Checks if all values from 'values' are greater than 'start' and less than 'end'
-    """
-    for value in values:
-        if not start < value < end:
-            return False
-    return True
+def modify_task_group(context_struct) -> None:
+    group = models.TaskGroup.objects.by_id_or_none(context_struct.group_id)
+    group.name = context_struct.name
+    group.color = context_struct.color
+    group.task_color = context_struct.task_color
+    group.save()
+
+
+def move_task_group(context_struct) -> None:
+    moved_group = models.TaskGroup.objects.by_id_or_none(context_struct.group_id)
+
+    old_pos = moved_group.position
+    new_pos = context_struct.new_pos
+    if old_pos == new_pos:
+        return
+
+    with transaction.atomic():
+        if old_pos < new_pos:
+            affected_groups = models.TaskGroup.objects\
+                .position_in_project_between(context_struct.project_id, old_pos, new_pos + 1)
+            affected_groups.update(position=F('position') - 1)
+        else:
+            affected_groups = models.TaskGroup.objects\
+                .position_in_project_between(context_struct.project_id, new_pos - 1, old_pos)
+            affected_groups.update(position=F('position') + 1)
+
+        moved_group.position = new_pos
+        moved_group.save()
+
+
+def delete_task_group(context_struct) -> None:
+    deleted_group = models.TaskGroup.objects.by_id_or_none(context_struct.group_id)
+    deleted_group.delete()
+
+
+def move_task(context_struct) -> None:
+    moved_task = models.Task.objects.by_id_or_none(context_struct.task_id)
+
+    old_group = moved_task.task_group
+    old_pos = moved_task.position
+
+    new_group = models.TaskGroup.objects.by_id_or_none(context_struct.new_group_id)
+    new_pos = context_struct.new_pos
+
+    if old_group == new_group and old_pos == new_pos:
+        return
+
+    with transaction.atomic():
+        models.Task.objects.position_in_group_greater_than(old_group.id, old_pos)\
+            .update(position=F('position') - 1)
+        models.Task.objects.position_in_group_greater_than(new_group.id, new_pos-1)\
+            .update(position=F('position') + 1)
+        moved_task.task_group = new_group
+        moved_task.position = new_pos
+        moved_task.save()
+
+
+
