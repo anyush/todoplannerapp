@@ -4,10 +4,11 @@
 {% block styles %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}">
 <link rel="stylesheet" type="text/css" href="{% static 'css/project.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/modals.css' %}">
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/project.js' %}" defer></script>
+<script src="{% static 'js/project/project.js' %}" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js"></script>
 {% endblock %}
 
@@ -15,21 +16,108 @@
 
 {% block content %}
 <div style="overflow-x:auto;">
-    <table class="task_table">
+    <table class="taskTable">
         <tr id="row">
-            {% for task_group, tasks in data %}
-            <td class="task_group" id="group_{{ task_group.id }}"
-                bkg_clr="{{ task_group.color }}" task_bkg_color="{{ task_group.task_color }}">
-                <div class="task_group_header" draggable="true">{{ task_group.name }}</div>
-                {% for task in tasks %}
-                <div class="task" id="task_{{ task.id }}" draggable="true">
-                    {{ task.name }}
-                </div>
-                {% endfor %}
+            <td class="taskGroup newTaskGroup">
+                <button type="button" class="taskGroupHeader" id="newGroupBtn">New Task Group</button>
+                <div style="height: 100%"></div>
             </td>
-            {% endfor %}
-            <td id="hidden_col" style="width: 100%"></td>
+            <td id="hiddenCol" style="width: 100%"></td>
         </tr>
     </table>
+</div>
+<div id="modal" class="modal">
+    <div class="modalContainer">
+        <div id="groupCreation" class="modalContent">
+            <form id="creationForm">
+                {% csrf_token %}
+                <h2><em id="modifiableGroupModalBlockTitle">Create new task group</em></h2>
+                <div>
+                    {{ groupForm.non_field_errors }}
+                    {% for field in groupCreationForm %}
+                    {% if field.errors %}
+                    <p>{{ groupForm.errors|striptags }}</p>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div>
+                    <label><b>Name</b></label>
+                    <br />
+                    {{ groupForm.name }}
+                    <br />
+
+                    <label><b>Preview</b></label>
+                    <br />
+                    <table align="center">
+                        <tbody>
+                            <tr>
+                                <td id="modifiableGroup" class="taskGroup">
+                                    <div id="modifiableGroupHeader" class="taskGroupHeader">Task Group</div>
+                                    <div class="task modifiableGroupTask">
+                                        Task
+                                        <hr />
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                        Nam tincidunt odio sed nisi vestibulum scelerisque.
+                                        Maecenas vehicula, lorem ac sollicitudin.
+                                    </div>
+                                    <div class="task modifiableGroupTask">
+                                        Task
+                                        <hr />
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                        Sed vitae tellus ut velit tempus aliquam.
+                                        Quisque pellentesque, orci at facilisis.
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br />
+
+                    <table class="modalField" style="border: none">
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <label><b>Group Color</b></label>
+                                    <br \>
+                                    {{ groupForm.color }}
+                                </td>
+                                <td width="50%">
+                                </td>
+                                <td>
+                                    <label><b>Task Color</b></label>
+                                    <br \>
+                                    {{ groupForm.task_color }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br />
+
+                    <label><b>Tags</b></label>
+                    <br />
+                    {{ groupForm.tags }}
+                    <br />
+
+                    <button type="button" id="modifiableGroupCancel" class="cancelBtn">Cancel</button>
+                    <button type="button" id="modifiableGroupModify" class="modifyBtn">Modify</button>
+                    <button type="button" id="modifiableGroupConfirm" class="confirmBtn">Create</button>
+                    <input type="hidden" name="next" value="{{ next }}" />
+                    <input type="hidden" id="modifiableGroupId" value="-1" />
+                </div>
+            </form>
+        </div>
+
+        <div id="groupDeletion" class="modalContent">
+            <h1 id="deleteTitle"></h1>
+            <p id="deleteQuestion"></p>
+
+            <div>
+                <button type="button" id="cancelDelete" class="cancelBtn">Cancel</button>
+                <button type="button" id="confirmDelete" class="deleteBtn">Delete</button>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock %}

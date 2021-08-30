@@ -40,3 +40,23 @@ class ProjectCreationForm(ModelForm):
     class Meta:
         model = models.Project
         fields = ('name', 'description', 'members', 'tags')
+
+
+class TaskGroupForm(ModelForm):
+    DEFAULT_COLOR = '#93b3db'
+    DEFAULT_TASK_COLOR = '#ebd06e'
+
+    name = forms.CharField(widget=TextInput(attrs={'id': 'modifiableGroupName', 'class': 'modalField'}))
+    color = forms.CharField(widget=forms.TextInput(attrs={'id': 'modifiableGroupColor', 'type': 'color',
+                                                          'default': DEFAULT_COLOR}),
+                            initial=DEFAULT_COLOR)
+    task_color = forms.CharField(widget=forms.TextInput(attrs={'id': 'modifiableGroupTaskColor', 'type': 'color',
+                                                               'default': DEFAULT_TASK_COLOR}),
+                                 initial=DEFAULT_TASK_COLOR)
+    tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())
+    tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'modalField'}), choices=tags_choices,
+                                     required=False)
+
+    class Meta:
+        model = models.TaskGroup
+        fields = ('name', 'color', 'task_color', 'tags')
