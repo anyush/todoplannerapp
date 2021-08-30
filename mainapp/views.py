@@ -30,7 +30,11 @@ def homepage(request):
 @decorators.user_is_project_member
 def project_page(request, project_id):
     group_form = forms.TaskGroupForm()
-    return render(request, 'project/project.html', context={'project_id': project_id, 'groupForm': group_form})
+    task_form = forms.TaskForm()
+    return render(request, 'project/project.html',
+                  context={'project_id': project_id,
+                           'groupForm': group_form,
+                           'taskForm': task_form})
 
 
 @login_required

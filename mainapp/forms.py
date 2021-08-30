@@ -67,7 +67,8 @@ class TaskForm(ModelForm):
                                                    'class': 'modalField'}))
     description = forms.CharField(widget=Textarea(attrs={'id': 'modifiableTaskDescription',
                                                          'class': 'modalField'}))
-    deadline_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'id': 'modifiableTaskDeadlineTime'}),
+    deadline_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'id': 'modifiableTaskDeadlineHidden',
+                                                                          'hidden': 'hidden'}),
                                         required=False)
     performers = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'id': 'modifiableTaskPerformers',
                                                                         'class': 'modalField'}))

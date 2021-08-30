@@ -108,6 +108,47 @@
             </form>
         </div>
 
+
+
+        <div class="modalContent">
+            <form>
+                {% csrf_token %}
+                <h2><em id="modifiableTaskModalBlockTitle">Create new task</em></h2>
+                <div>
+                    <label><b>Name</b></label>
+                    <br />
+                    {{ taskForm.name }}
+                    <br />
+
+                    <label><b>Description</b></label>
+                    <br />
+                    {{ taskForm.description }}
+                    <br />
+
+                    <label><b>Deadline</b></label>
+                    <br />
+                    <input type="date" id="modifiableTaskDeadlineDate" />
+                    <input type="time" id="modifiableTaskDeadlineTime" />
+                    <br />
+                    <br />
+
+                    <label><b>Tags</b></label>
+                    <br />
+                    {{ groupForm.tags }}
+                    <br />
+
+                    <button type="button" id="modifiableTaskCancel" class="cancelBtn">Cancel</button>
+                    <button type="button" id="modifiableTaskModify" class="modifyBtn">Modify</button>
+                    <button type="button" id="modifiableTaskConfirm" class="confirmBtn">Create</button>
+                    <input type="hidden" id="modifiableTaskId" value="-1" />
+                    {{ taskForm.deadline_time }}
+                    <input type="hidden" name="next" value="{{ next }}" />
+                </div>
+            </form>
+        </div>
+
+
+
         <div id="groupDeletion" class="modalContent">
             <h1 id="deleteTitle"></h1>
             <p id="deleteQuestion"></p>
