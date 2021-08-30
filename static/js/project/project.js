@@ -300,7 +300,7 @@ function createTaskElement(taskData, color) {
     taskElement.classList.add('task');
     taskElement.setAttribute('draggable', 'true');
     taskElement.style.backgroundColor = color;
-    taskElement.innerHTML = taskData['name'] + '<hr />' + taskData['description'];
+    taskElement.innerHTML = taskData['name'] + '<hr /><div class="taskDescr">' + taskData['description'] + '</div>';
 
     taskElement.addEventListener('dragstart', () => {
         taskElement.classList.add('dragging');

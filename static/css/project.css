@@ -42,6 +42,13 @@
     background-color: white;
 }
 
+.taskDescr {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 .headerButton {
     width: 20px;
     height: 20px;
