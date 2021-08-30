@@ -60,3 +60,23 @@ class TaskGroupForm(ModelForm):
     class Meta:
         model = models.TaskGroup
         fields = ('name', 'color', 'task_color', 'tags')
+
+
+class TaskForm(ModelForm):
+    name = forms.CharField(widget=TextInput(attrs={'id': 'modifiableTaskName',
+                                                   'class': 'modalField'}))
+    description = forms.CharField(widget=Textarea(attrs={'id': 'modifiableTaskDescription',
+                                                         'class': 'modalField'}))
+    deadline_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'id': 'modifiableTaskDeadlineTime'}),
+                                        required=False)
+    performers = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'id': 'modifiableTaskPerformers',
+                                                                        'class': 'modalField'}))
+    tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())
+    tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'id': 'modifiableTaskTags',
+                                                                  'class': 'modalField'}),
+                                     choices=tags_choices,
+                                     required=False)
+
+    class Meta:
+        model = models.Task
+        fields = ('name', 'description', 'deadline_time', 'performers', 'tags')
