@@ -15,6 +15,7 @@ const modal = document.getElementById('modal');
 const modalBlocks = document.querySelectorAll('.modalContent');
 const modalBlockModifyGroup = document.getElementById('groupCreation');
 const modalBlockDeleteGroup = document.getElementById('groupDeletion');
+const modalBlockModifyTask = document.getElementById('taskModalBlock');
 //// task group form
 const modifiableGroupModalBlockTitle = document.getElementById('modifiableGroupModalBlockTitle');
 const modifiableGroupId = document.getElementById('modifiableGroupId');
@@ -29,6 +30,16 @@ const modifiableGroupCancelBtn = document.getElementById('modifiableGroupCancel'
 const modifiableGroup = document.getElementById('modifiableGroup');
 const modifiableGroupHeader = document.getElementById('modifiableGroupHeader');
 const modifiableGroupTasks = modifiableGroup.querySelectorAll('.task');
+//// task form
+const modifiableTaskModalBlockTitle = document.getElementById('modifiableTaskModalBlockTitle');
+const modifiableTaskTitle = document.getElementById('modifiableTaskName');
+const modifiableTaskDescr = document.getElementById('modifiableTaskDescription');
+const modifiableTaskDeadline = document.getElementById('modifiableTaskDeadlineHidden');
+const modifiableTaskDeadlineDate = document.getElementById('modifiableTaskDeadlineDate');
+const modifiableTaskDeadlineTime = document.getElementById('modifiableTaskDeadlineTime');
+const modifiableTaskConfirmBtn = document.getElementById('modifiableTaskConfirm');
+const modifiableTaskModifyBtn = document.getElementById('modifiableTaskModify');
+const modifiableTaskCancelBtn = document.getElementById('modifiableTaskCancel');
 //// task group deletion
 const deleteTitle = document.getElementById('deleteTitle');
 const deleteQuestion = document.getElementById('deleteQuestion');
@@ -89,7 +100,7 @@ var messageHandlerGetProjectData = function (context) {
 
         var groupElement = createGroupElement(groupData);
 
-        var headerElement = createHeaderElement(groupData['name'], groupElement);
+        var headerElement = createGroupHeaderElement(groupData['name'], groupElement);
         groupElement.appendChild(headerElement);
 
         tasks.forEach(task => {
@@ -115,7 +126,7 @@ const messageHandlerModifyTaskGroup = function (context) {
         return;
     }
 
-    modifiedGroup.querySelector('.headerText').innerText = context['name'];
+    modifiedGroup.querySelector('.groupHeaderText').innerText = context['name'];
     modifiedGroup.setAttribute('bkgColor', context['color']);
     modifiedGroup.setAttribute('taskBkgColor', context['task_color']);
     modifiedGroup.style.backgroundColor = context['color'];
@@ -220,9 +231,9 @@ function hideModalContent() {
     });
 }
 
-function createHeaderDeleteBtn(groupNode) {
+function createGroupHeaderDeleteBtn() {
     var deleteButtonElement = document.createElement('button');
-    deleteButtonElement.classList.add('headerButton');
+    deleteButtonElement.classList.add('groupHeaderButton');
     deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
     deleteButtonElement.addEventListener('click', () => {
         hideModalContent();
@@ -231,15 +242,15 @@ function createHeaderDeleteBtn(groupNode) {
 
         deleteTitle.innerText = 'Delete Task Group';
         deleteQuestion.innerText = 'Are you sure you want to delete "' + deleteButtonElement.parentNode.innerText + '"?';
-        deletedTaskGroup = groupNode;
+        deletedTaskGroup = deleteButtonElement.parentNode.parentNode;
     });
 
     return deleteButtonElement;
 }
 
-function createHeaderModifyBtn() {
+function createGroupHeaderModifyBtn() {
     var modifyButtonElement = document.createElement('button');
-    modifyButtonElement.classList.add('headerButton');
+    modifyButtonElement.classList.add('groupHeaderButton');
     modifyButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/settingsButton.png)';
     modifyButtonElement.addEventListener('click', () => {
         hideModalContent();
@@ -264,16 +275,16 @@ function createHeaderModifyBtn() {
     return modifyButtonElement;
 }
 
-function createHeaderElement(name, groupNode) {
+function createGroupHeaderElement(name, groupNode) {
     var headerElement = document.createElement('div');
     headerElement.classList.add('taskGroupHeader');
     headerElement.setAttribute('draggable', 'true');
-    headerElement.innerHTML = '<span class="headerText">' + name + '</span>';
+    headerElement.innerHTML = '<span class="groupHeaderText">' + name + '</span>';
 
-    var deleteButtonElement = createHeaderDeleteBtn(groupNode);
+    var deleteButtonElement = createGroupHeaderDeleteBtn();
     headerElement.appendChild(deleteButtonElement);
 
-    var settingsButtonElement = createHeaderModifyBtn();
+    var settingsButtonElement = createGroupHeaderModifyBtn();
     headerElement.appendChild(settingsButtonElement);
 
     headerElement.addEventListener('dragstart', () => {
@@ -294,13 +305,64 @@ function createHeaderElement(name, groupNode) {
     return headerElement;
 }
 
+function createTaskModifyBtn() {
+    var modifyButtonElement = createGroupHeaderModifyBtn()
+
+    modifyButtonElement.addEventListener('click', () => {
+        hideModalContent();
+
+        modal.style.display = 'block';
+        modalBlockModifyTask.style.display = 'block';
+
+        modifiableTaskModalBlockTitle.innerText = 'Modify Task';
+        modifiableTaskTitle.value = modifyButtonElement.parentNode.innerText;
+        modifiableTaskConfirmBtn.style.display = 'none';
+        modifiableTaskModifyBtn.style.display = 'inline';
+        modifiableTaskId.value = parseInt(modifyButtonElement.parentNode.getAttribute('id').split('_')[1]);
+    });
+
+    return modifyButtonElement;
+}
+
+function createTaskDeleteBtn() {
+    var deleteButtonElement = createGroupHeaderDeleteBtn();
+
+    deleteButtonElement.addEventListener('click', () => {
+        hideModalContent();
+        modal.style.display = 'block';
+        modalBlockDeleteGroup.style.display = 'block';
+
+        deleteTitle.innerText = 'Delete Task';
+        deleteQuestion.innerText = 'Are you sure you want to delete "' + deleteButtonElement.parentNode.innerText + '"?';
+        deletedTask = deleteButtonElement.parentNode;
+    });
+
+    return deleteButtonElement;
+}
+
+function createTaskHeaderElement(name) {
+    var headerElement = document.createElement('div');
+    headerElement.classList.add('taskHeader');
+    headerElement.innerHTML = '<span class="taskHeaderText">' + name + '</span>';
+
+    var deleteButtonElement = createTaskDeleteBtn();
+    headerElement.appendChild(deleteButtonElement);
+
+    var settingsButtonElement = createTaskModifyBtn();
+    headerElement.appendChild(settingsButtonElement);
+
+    return headerElement;
+}
+
 function createTaskElement(taskData, color) {
     var taskElement = document.createElement('div');
     taskElement.id = 'task_' + taskData['id'];
     taskElement.classList.add('task');
     taskElement.setAttribute('draggable', 'true');
     taskElement.style.backgroundColor = color;
-    taskElement.innerHTML = taskData['name'] + '<hr /><div class="taskDescr">' + taskData['description'] + '</div>';
+
+    taskElement.appendChild(createTaskHeaderElement(taskData['name']));
+    taskElement.innerHTML += '<hr /><div class="taskDescr">' + taskData['description'] + '</div>';
 
     taskElement.addEventListener('dragstart', () => {
         taskElement.classList.add('dragging');
