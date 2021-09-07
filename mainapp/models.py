@@ -107,6 +107,9 @@ class TaskManager(models.Manager):
         """
         return self.by_group_id(group_id).filter(position__gt=gt)
 
+    def get_task_names_in_project(self, project_id):
+        return self.filter(task_group__project__id=project_id).values_list('name')
+
 
 class Task(models.Model):
     position = models.IntegerField()

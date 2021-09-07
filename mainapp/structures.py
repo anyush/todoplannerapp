@@ -1,4 +1,5 @@
 import attr
+from datetime import datetime
 
 import mainapp.validators as validators
 
@@ -36,6 +37,24 @@ class TaskGroupMoveStructure(ProjectStructure):
 class TaskGroupDeleteStructure(ProjectStructure):
     group_id = attr.ib(validator=(attr.validators.instance_of(int),
                                   validators.check_group_id()))
+
+
+@attr.s
+class TaskCreateStructure(ProjectStructure):
+    name = attr.ib(validator=(attr.validators.instance_of(str),
+                              validators.check_task_name_free()))
+    description = attr.ib(validator=attr.validators.instance_of(str))
+    group_id = attr.ib(validator=(attr.validators.instance_of(int),
+                                  validators.check_group_id()))
+    creation_time = attr.ib(validator=attr.validators.instance_of(datetime))
+    deadline_validator = attr.validators.optional((attr.validators.instance_of(datetime),
+                                                   validators.check_time_not_before(time_field_name='creation_time')))
+    deadline_time = attr.ib(default=None,
+                            validator=deadline_validator)
+    performers_member_validator = attr.validators.and_(attr.validators.instance_of(int),
+                                                       validators.check_performer_id())
+    performers = attr.ib(default=None,
+                         validator=attr.validators.deep_iterable(member_validator=performers_member_validator))
 
 
 @attr.s

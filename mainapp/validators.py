@@ -13,6 +13,16 @@ def check_project_id(*, user_id_field_name='user_id'):
     return check_f
 
 
+def check_performer_id(*, project_id_field_name='project_id'):
+    def check_f(instance, attribute, value):
+        project_id = getattr(instance, project_id_field_name)
+        project = models.Project.objects.by_id_or_none(project_id)
+        if project is None or value not in project.members.values_list('id', flat=True):
+            raise ValueError(attribute.name + ' is not valid!')
+
+    return check_f
+
+
 def check_group_id(*, project_id_field_name='project_id'):
     def check_f(instance, attribute, value):
         if not models.TaskGroup.objects.id_is_valid(value):
@@ -33,6 +43,16 @@ def check_task_id(*, project_id_field_name='project_id'):
         project_id = getattr(instance, project_id_field_name)
         if not models.Project.objects.task_belongs_to_project(project_id, value):
             raise ValueError(attribute.name + ' is not part of Project(id=' + project_id + ')!')
+
+    return check_f
+
+
+def check_task_name_free(*, project_id_field_name='project_id'):
+    def check_f(instance, attribute, value):
+        project_id = getattr(instance, project_id_field_name)
+        names = models.Task.objects.get_task_names_in_project(project_id)
+        if value in names or len(value) == 0:
+            raise ValueError(attribute.name + ' is not valid')
 
     return check_f
 
@@ -62,6 +82,15 @@ def check_task_group_name_free(*, project_id_field_name='project_id'):
     def check_f(instance, attribute, value):
         project_id = getattr(instance, project_id_field_name)
         if value in models.Project.objects.by_id_or_none(project_id).task_groups.values('name'):
+            raise ValueError(attribute.name + ' is not valid!')
+
+    return check_f
+
+
+def check_time_not_before(*, time_field_name):
+    def check_f(instance, attribute, value):
+        time_field = getattr(instance, time_field_name)
+        if time_field > value:
             raise ValueError(attribute.name + ' is not valid!')
 
     return check_f
