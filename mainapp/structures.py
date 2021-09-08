@@ -46,9 +46,9 @@ class TaskCreateStructure(ProjectStructure):
     description = attr.ib(validator=attr.validators.instance_of(str))
     group_id = attr.ib(validator=(attr.validators.instance_of(int),
                                   validators.check_group_id()))
-    creation_time = attr.ib(validator=attr.validators.instance_of(datetime))
-    deadline_validator = attr.validators.optional((attr.validators.instance_of(datetime),
-                                                   validators.check_time_not_before(time_field_name='creation_time')))
+    deadline_validator = attr.validators.optional(
+        attr.validators.and_(attr.validators.instance_of(datetime),
+                             validators.check_time_in_future()))
     deadline_time = attr.ib(default=None,
                             validator=deadline_validator)
     performers_member_validator = attr.validators.and_(attr.validators.instance_of(int),

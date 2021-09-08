@@ -70,8 +70,11 @@ class TaskForm(ModelForm):
     deadline_time = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'id': 'modifiableTaskDeadlineHidden',
                                                                           'hidden': 'hidden'}),
                                         required=False)
+    performers_choices = ((usr.id, usr.username) for usr in models.User.objects.all())
     performers = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'id': 'modifiableTaskPerformers',
-                                                                        'class': 'modalField'}))
+                                                                        'class': 'modalField'}),
+                                           choices=performers_choices,
+                                           required=False)
     tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())
     tags = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'id': 'modifiableTaskTags',
                                                                   'class': 'modalField'}),

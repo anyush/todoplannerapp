@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import mainapp.models as models
 
 
@@ -87,10 +89,12 @@ def check_task_group_name_free(*, project_id_field_name='project_id'):
     return check_f
 
 
-def check_time_not_before(*, time_field_name):
+def check_time_in_future(*, time_now=None):
+    if time_now is None:
+        time_now = datetime.now()
+
     def check_f(instance, attribute, value):
-        time_field = getattr(instance, time_field_name)
-        if time_field > value:
+        if time_now > value:
             raise ValueError(attribute.name + ' is not valid!')
 
     return check_f

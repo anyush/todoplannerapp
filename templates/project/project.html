@@ -132,16 +132,21 @@
                     <br />
                     <br />
 
+                    <label><b>Performers</b></label>
+                    <br />
+                    {{ taskForm.performers }}
+                    <br />
+
                     <label><b>Tags</b></label>
                     <br />
-                    {{ groupForm.tags }}
+                    {{ taskForm.tags }}
                     <br />
 
                     <button type="button" id="modifiableTaskCancel" class="cancelBtn">Cancel</button>
                     <button type="button" id="modifiableTaskModify" class="modifyBtn">Modify</button>
                     <button type="button" id="modifiableTaskConfirm" class="confirmBtn">Create</button>
                     <input type="hidden" id="modifiableTaskId" value="-1" />
-                    {{ taskForm.deadline_time }}
+                    <input type="hidden" id="modifiableTaskGroupId" value="-1" />
                     <input type="hidden" name="next" value="{{ next }}" />
                 </div>
             </form>

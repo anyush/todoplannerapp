@@ -32,11 +32,14 @@ const modifiableGroupHeader = document.getElementById('modifiableGroupHeader');
 const modifiableGroupTasks = modifiableGroup.querySelectorAll('.task');
 //// task form
 const modifiableTaskModalBlockTitle = document.getElementById('modifiableTaskModalBlockTitle');
+const modifiableTaskId = document.getElementById('modifiableTaskId');
+const modifiableTaskGroupId = document.getElementById('modifiableTaskGroupId');
 const modifiableTaskTitle = document.getElementById('modifiableTaskName');
 const modifiableTaskDescr = document.getElementById('modifiableTaskDescription');
 const modifiableTaskDeadline = document.getElementById('modifiableTaskDeadlineHidden');
 const modifiableTaskDeadlineDate = document.getElementById('modifiableTaskDeadlineDate');
 const modifiableTaskDeadlineTime = document.getElementById('modifiableTaskDeadlineTime');
+const modifiableTaskPerformers = document.getElementById('modifiableTaskPerformers');
 const modifiableTaskConfirmBtn = document.getElementById('modifiableTaskConfirm');
 const modifiableTaskModifyBtn = document.getElementById('modifiableTaskModify');
 const modifiableTaskCancelBtn = document.getElementById('modifiableTaskCancel');
@@ -391,6 +394,21 @@ function createNewTaskElement(groupId) {
     newTaskElement.classList.add('newTask');
     newTaskElement.innerText = 'New Task';
 
+    newTaskElement.addEventListener('click', () => {
+        hideModalContent();
+        modal.style.display = 'block';
+        modalBlockModifyTask.style.display = 'block';
+
+        modifiableTaskModalBlockTitle.innerText = 'Create new Task';
+        modifiableTaskGroupId.value = newTaskElement.parentNode.getAttribute('id').split('_')[1];
+        modifiableTaskTitle.value = '';
+        modifiableTaskDescr.value = '';
+        modifiableTaskDeadlineDate.value = '';
+        modifiableTaskDeadlineTime.value = '';
+        modifiableTaskConfirmBtn.style.display = 'inline';
+        modifiableTaskModifyBtn.style.display = 'none';
+    })
+
     return newTaskElement;
 }
 
@@ -503,13 +521,40 @@ modifiableGroupConfirmBtn.addEventListener('click', e => {
 });
 
 
+// task creation/modification logic
+modifiableTaskCancelBtn.addEventListener('click', e => {
+    modal.style.display = 'none';
+});
+
+modifiableTaskConfirmBtn.addEventListener('click', e => {
+    if (modifiableTaskDeadlineDate.value == '' ^ modifiableTaskDeadlineTime.value == '')
+        return;
+
+    var context = {
+        'name': modifiableTaskTitle.value,
+        'description': modifiableTaskDescr.value,
+        'group_id': parseInt(modifiableTaskGroupId.value),
+        'performers': Array.from(modifiableTaskPerformers.selectedOptions).map(({ value }) => parseInt(value))
+    };
+
+    var deadline = modifiableTaskDeadlineDate.value + ' ' + modifiableTaskDeadlineTime.value;
+    if (deadline != ' ')
+        context['deadline_time'] = deadline;
+
+
+    socket.send(JSON.stringify({
+        'operation': 'create_task',
+        'context': JSON.stringify(context)
+    }));
+});
+
 
 // task group/task deletion logic
 cancelDeleteBtn.addEventListener('click', () => {
     modal.style.display = 'none';
     deletedTaskGroup = null;
     deletedTask = null;
-})
+});
 
 confirmDeleteBtn.addEventListener('click', () => {
     if (!(deletedTaskGroup == null ^ deletedTask == null)) {
