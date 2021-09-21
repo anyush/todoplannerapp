@@ -77,7 +77,8 @@ class TaskTests(TestCase):
         self.assertEqual(models.Task.objects.get(id=task_ids[0]).position, 0)
         self.assertEqual(models.Task.objects.get(id=task_ids[1]).position, 1)
 
-        services.move_task(context_struct)
+        moved = services.move_task(context_struct)
+        self.assertTrue(moved)
 
         self.assertEqual(models.Task.objects.get(id=task_ids[0]).position, 1)
         self.assertEqual(models.Task.objects.get(id=task_ids[1]).position, 0)
@@ -105,7 +106,8 @@ class TaskTests(TestCase):
             new_pos=0
         )
 
-        services.move_task(context_struct)
+        moved = services.move_task(context_struct)
+        self.assertTrue(moved)
 
         self.assertEqual(models.Task.objects.get(id=task_ids[0]).task_group.id, self.task_groups[1].id)
         self.assertEqual(models.Task.objects.get(id=task_ids[1]).task_group.id, self.task_groups[0].id)
@@ -123,7 +125,8 @@ class TaskTests(TestCase):
             new_pos=1
         )
 
-        services.move_task(context_struct)
+        moved = services.move_task(context_struct)
+        self.assertTrue(moved)
 
         self.assertEqual(models.Task.objects.get(id=task_ids[0]).task_group.id, self.task_groups[0].id)
         self.assertEqual(models.Task.objects.get(id=task_ids[1]).task_group.id, self.task_groups[0].id)
@@ -147,5 +150,6 @@ class TaskTests(TestCase):
             task_id=task_id
         )
 
-        services.delete_task(context_struct)
+        deleted = services.delete_task(context_struct)
+        self.assertTrue(deleted)
         self.assertRaises(models.Task.DoesNotExist, models.Task.objects.get, id=task_id)
