@@ -1,10 +1,12 @@
 from django.contrib.auth import login
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import F
 import json
 
 import mainapp.forms as forms
 import mainapp.models as models
+import mainapp.structures as structures
 
 
 def try_register_user(request) -> (bool, int):
@@ -84,6 +86,25 @@ def move_task_group(context_struct) -> None:
 def delete_task_group(context_struct) -> None:
     deleted_group = models.TaskGroup.objects.by_id_or_none(context_struct.group_id)
     deleted_group.delete()
+
+
+def create_task(context_struct: structures.TaskCreateStructure) -> (int, bool):
+    performers = (User.objects.get(id=perf_id) for perf_id in context_struct.performers) \
+        if context_struct.performers is not None else None
+    task = models.Task.objects.create(
+        position=models.Task.objects.number_in_group(context_struct.group_id),
+        name=context_struct.name,
+        description=context_struct.description if context_struct.description is not None else '',
+        task_group=models.TaskGroup.objects.by_id_or_none(context_struct.group_id),
+        deadline_time=context_struct.deadline_time,
+        creator=User.objects.get(id=context_struct.user_id),
+    )
+
+    if performers is not None:
+        task.performers.set(performers)
+        task.save()
+
+    return task.id, True
 
 
 def move_task(context_struct) -> None:
