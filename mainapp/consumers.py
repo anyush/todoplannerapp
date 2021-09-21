@@ -58,6 +58,19 @@ class ProjectConsumer(JsonWebsocketConsumer):
             'context': project_data
         }))
 
+    def create_task(self, context_struct, content):
+        async_to_sync(self.channel_layer.group_send)(
+            self.group_name,
+            {
+                'type': 'websocket.receive',
+                'text': json.dumps({
+                    'operation': 'get_data',
+                    'context': '{}'
+                })
+            }
+        )
+        services.create_task(context_struct)
+
     def move_task(self, context_struct, content):
         self.stream_message(content=content)
         services.move_task(context_struct)
@@ -89,6 +102,7 @@ class ProjectConsumer(JsonWebsocketConsumer):
 
     operations = {
         'get_data': (get_project_data, structures.ProjectStructure),
+        'create_task': (create_task, structures.TaskCreateStructure),
         'move_task': (move_task, structures.TaskMoveStructure),
         'create_task_group': (create_task_group, structures.TaskGroupCreateStructure),
         'modify_task_group': (modify_task_group, structures.TaskGroupModifyStructure),
