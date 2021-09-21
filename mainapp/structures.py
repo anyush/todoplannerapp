@@ -43,9 +43,10 @@ class TaskGroupDeleteStructure(ProjectStructure):
 class TaskCreateStructure(ProjectStructure):
     name = attr.ib(validator=(attr.validators.instance_of(str),
                               validators.check_task_name_free()))
-    description = attr.ib(validator=attr.validators.instance_of(str))
     group_id = attr.ib(validator=(attr.validators.instance_of(int),
                                   validators.check_group_id()))
+    description = attr.ib(default=None,
+                          validator=attr.validators.optional(attr.validators.instance_of(str)))
     deadline_validator = attr.validators.optional(
         attr.validators.and_(attr.validators.instance_of(datetime),
                              validators.check_time_in_future()))
@@ -54,7 +55,8 @@ class TaskCreateStructure(ProjectStructure):
     performers_member_validator = attr.validators.and_(attr.validators.instance_of(int),
                                                        validators.check_performer_id())
     performers = attr.ib(default=None,
-                         validator=attr.validators.deep_iterable(member_validator=performers_member_validator))
+                         validator=attr.validators.optional(
+                             attr.validators.deep_iterable(member_validator=performers_member_validator)))
 
 
 @attr.s

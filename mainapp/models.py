@@ -101,6 +101,9 @@ class TaskManager(models.Manager):
     def by_group_id(self, group_id):
         return self.filter(task_group__id=group_id)
 
+    def number_in_group(self, group_id):
+        return self.by_group_id(group_id).count()
+
     def position_in_group_greater_than(self, group_id, gt):
         """
             'gt' position excluded
