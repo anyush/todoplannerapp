@@ -129,4 +129,7 @@ def move_task(context_struct) -> None:
         moved_task.save()
 
 
-
+def delete_task(context_struct: structures.TaskDeleteStructure) -> bool:
+    deleted_task = models.Task.objects.by_id_or_none(context_struct.task_id)
+    deleted_task.delete()
+    return True
