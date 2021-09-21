@@ -107,7 +107,7 @@ def create_task(context_struct: structures.TaskCreateStructure) -> (int, bool):
     return task.id, True
 
 
-def move_task(context_struct) -> None:
+def move_task(context_struct) -> bool:
     moved_task = models.Task.objects.by_id_or_none(context_struct.task_id)
 
     old_group = moved_task.task_group
@@ -117,7 +117,7 @@ def move_task(context_struct) -> None:
     new_pos = context_struct.new_pos
 
     if old_group == new_group and old_pos == new_pos:
-        return
+        return False
 
     with transaction.atomic():
         models.Task.objects.position_in_group_greater_than(old_group.id, old_pos)\
@@ -127,6 +127,8 @@ def move_task(context_struct) -> None:
         moved_task.task_group = new_group
         moved_task.position = new_pos
         moved_task.save()
+
+    return True
 
 
 def delete_task(context_struct: structures.TaskDeleteStructure) -> bool:
