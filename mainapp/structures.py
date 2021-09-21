@@ -67,3 +67,9 @@ class TaskMoveStructure(ProjectStructure):
                                       validators.check_group_id()))
     new_pos = attr.ib(validator=(attr.validators.instance_of(int),
                                  validators.check_task_position(group_id_field_name='new_group_id')))
+
+
+@attr.s
+class TaskDeleteStructure(ProjectStructure):
+    task_id = attr.ib(validator=(attr.validators.instance_of(int),
+                                 validators.check_task_id()))
