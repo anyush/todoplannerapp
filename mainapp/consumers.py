@@ -75,6 +75,10 @@ class ProjectConsumer(JsonWebsocketConsumer):
         self.stream_message(content=content)
         services.move_task(context_struct)
 
+    def delete_task(self, context_struct, content):
+        self.stream_message(content=content)
+        services.delete_task(context_struct)
+
     def create_task_group(self, context_struct, content):
         async_to_sync(self.channel_layer.group_send)(
             self.group_name,
