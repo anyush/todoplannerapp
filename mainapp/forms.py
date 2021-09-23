@@ -30,7 +30,7 @@ class CustomRegistrationForm(UserCreationForm):
 class ProjectCreationForm(ModelForm):
     name = forms.CharField(widget=TextInput(attrs={'class': 'form_field'}))
     description = forms.CharField(widget=Textarea(attrs={'class': 'form_field'}))
-    members_choices = ((user, user.username) for user in User.objects.all())
+    members_choices = ((user.username, user.username) for user in User.objects.all())
     members = forms.MultipleChoiceField(widget=SelectMultiple(attrs={'class': 'form_field'}), choices=members_choices,
                                         required=False)
     tags_choices = ((tag, tag.name) for tag in models.Tag.objects.all())

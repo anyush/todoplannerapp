@@ -22,7 +22,9 @@ def try_create_project(request) -> (bool, int):
     form = forms.ProjectCreationForm(request.POST)
     if form.is_valid():
         project = form.save(commit=False)
-        project.manager = request.user
+        project.owner = request.user
+        project.save()
+        project.members.set(map(User.objects.get_by_natural_key, request.POST.getlist('members')))
         project.save()
         return True, project.id
     return False, -1

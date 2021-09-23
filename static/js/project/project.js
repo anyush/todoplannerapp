@@ -546,6 +546,7 @@ modifiableTaskConfirmBtn.addEventListener('click', e => {
         'operation': 'create_task',
         'context': JSON.stringify(context)
     }));
+    modal.style.display = 'none';
 });
 
 
