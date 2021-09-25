@@ -117,6 +117,67 @@ var messageHandlerGetProjectData = function (context) {
 
         row.prepend(groupElement);
     });
+
+    row.querySelectorAll('.headerModifyButton.groupHeaderButton').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideModalContent();
+
+            modal.style.display = 'block';
+            modalBlockModifyGroup.style.display = 'block';
+
+            modifiableGroupModalBlockTitle.innerText = 'Modify Task Group';
+            modifiableGroupTitle.value = btn.parentNode.innerText;
+            modifiableGroupHeader.innerText = btn.parentNode.innerText;
+            modifiableGroupColorPicker.value = btn.parentNode.parentNode.getAttribute('bkgColor');
+            modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
+            modifiableGroupTaskColorPicker.value = btn.parentNode.parentNode.getAttribute('taskBkgColor');
+            modifiableGroupTasks.forEach(task => {
+                task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
+            });
+            modifiableGroupConfirmBtn.style.display = 'none';
+            modifiableGroupModifyBtn.style.display = 'inline';
+            modifiableGroupId.value = parseInt(btn.parentNode.parentNode.getAttribute('id').split('_')[1]);
+        });
+    });
+
+    row.querySelectorAll('.headerDeleteButton.groupHeaderButton').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideModalContent();
+            modal.style.display = 'block';
+            modalBlockDeleteGroup.style.display = 'block';
+
+            deleteTitle.innerText = 'Delete Task Group';
+            deleteQuestion.innerText = 'Are you sure you want to delete "' + btn.parentNode.innerText + '"?';
+            deletedTaskGroup = btn.parentNode.parentNode;
+        });
+    });
+
+    row.querySelectorAll('.headerModifyButton.taskHeaderButton').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideModalContent();
+
+            modal.style.display = 'block';
+            modalBlockModifyTask.style.display = 'block';
+
+            modifiableTaskModalBlockTitle.innerText = 'Modify Task';
+            modifiableTaskTitle.value = btn.parentNode.innerText;
+            modifiableTaskConfirmBtn.style.display = 'none';
+            modifiableTaskModifyBtn.style.display = 'inline';
+            modifiableTaskId.value = parseInt(btn.parentNode.parentNode.getAttribute('id').split('_')[1]);
+        });
+    });
+
+    row.querySelectorAll('.headerDeleteButton.taskHeaderButton').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hideModalContent();
+            modal.style.display = 'block';
+            modalBlockDeleteGroup.style.display = 'block';
+
+            deleteTitle.innerText = 'Delete Task';
+            deleteQuestion.innerText = 'Are you sure you want to delete "' + btn.parentNode.innerText + '"?';
+            deletedTask = btn.parentNode.parentNode;
+        });
+    });
 }
 
 const messageHandlerModifyTaskGroup = function (context) {
@@ -205,6 +266,25 @@ window.onload = function () {
 
 
 // page elements generation
+function createHeaderDeleteBtn() {
+    var deleteButtonElement = document.createElement('button');
+    deleteButtonElement.classList.add('headerButton');
+    deleteButtonElement.classList.add('headerDeleteButton');
+    deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
+
+    return deleteButtonElement;
+}
+
+function createHeaderModifyBtn() {
+    var modifyButtonElement = document.createElement('button');
+    modifyButtonElement.classList.add('headerButton');
+    modifyButtonElement.classList.add('headerModifyButton');
+    modifyButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/settingsButton.png)';
+
+    return modifyButtonElement;
+}
+
+
 function createGroupElement(groupData) {
     var groupElement = document.createElement('td');
     groupElement.id = 'group_' + groupData['id'];
@@ -235,45 +315,15 @@ function hideModalContent() {
 }
 
 function createGroupHeaderDeleteBtn() {
-    var deleteButtonElement = document.createElement('button');
+    var deleteButtonElement = createHeaderDeleteBtn();
     deleteButtonElement.classList.add('groupHeaderButton');
-    deleteButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/deleteButton.png)';
-    deleteButtonElement.addEventListener('click', () => {
-        hideModalContent();
-        modal.style.display = 'block';
-        modalBlockDeleteGroup.style.display = 'block';
-
-        deleteTitle.innerText = 'Delete Task Group';
-        deleteQuestion.innerText = 'Are you sure you want to delete "' + deleteButtonElement.parentNode.innerText + '"?';
-        deletedTaskGroup = deleteButtonElement.parentNode.parentNode;
-    });
 
     return deleteButtonElement;
 }
 
 function createGroupHeaderModifyBtn() {
-    var modifyButtonElement = document.createElement('button');
+    var modifyButtonElement = createHeaderModifyBtn();
     modifyButtonElement.classList.add('groupHeaderButton');
-    modifyButtonElement.style.backgroundImage = 'url(' + loc.origin + staticFilesSource + 'png/project/settingsButton.png)';
-    modifyButtonElement.addEventListener('click', () => {
-        hideModalContent();
-
-        modal.style.display = 'block';
-        modalBlockModifyGroup.style.display = 'block';
-
-        modifiableGroupModalBlockTitle.innerText = 'Modify Task Group';
-        modifiableGroupTitle.value = modifyButtonElement.parentNode.innerText;
-        modifiableGroupHeader.innerText = modifyButtonElement.parentNode.innerText;
-        modifiableGroupColorPicker.value = modifyButtonElement.parentNode.parentNode.getAttribute('bkgColor');
-        modifiableGroup.style.backgroundColor = modifiableGroupColorPicker.value;
-        modifiableGroupTaskColorPicker.value = modifyButtonElement.parentNode.parentNode.getAttribute('taskBkgColor');
-        modifiableGroupTasks.forEach(task => {
-            task.style.backgroundColor = modifiableGroupTaskColorPicker.value;
-        });
-        modifiableGroupConfirmBtn.style.display = 'none';
-        modifiableGroupModifyBtn.style.display = 'inline';
-        modifiableGroupId.value = parseInt(modifyButtonElement.parentNode.parentNode.getAttribute('id').split('_')[1]);
-    });
 
     return modifyButtonElement;
 }
@@ -309,36 +359,15 @@ function createGroupHeaderElement(name, groupNode) {
 }
 
 function createTaskModifyBtn() {
-    var modifyButtonElement = createGroupHeaderModifyBtn()
-
-    modifyButtonElement.addEventListener('click', () => {
-        hideModalContent();
-
-        modal.style.display = 'block';
-        modalBlockModifyTask.style.display = 'block';
-
-        modifiableTaskModalBlockTitle.innerText = 'Modify Task';
-        modifiableTaskTitle.value = modifyButtonElement.parentNode.innerText;
-        modifiableTaskConfirmBtn.style.display = 'none';
-        modifiableTaskModifyBtn.style.display = 'inline';
-        modifiableTaskId.value = parseInt(modifyButtonElement.parentNode.getAttribute('id').split('_')[1]);
-    });
+    var modifyButtonElement = createHeaderModifyBtn();
+    modifyButtonElement.classList.add('taskHeaderButton');
 
     return modifyButtonElement;
 }
 
 function createTaskDeleteBtn() {
-    var deleteButtonElement = createGroupHeaderDeleteBtn();
-
-    deleteButtonElement.addEventListener('click', () => {
-        hideModalContent();
-        modal.style.display = 'block';
-        modalBlockDeleteGroup.style.display = 'block';
-
-        deleteTitle.innerText = 'Delete Task';
-        deleteQuestion.innerText = 'Are you sure you want to delete "' + deleteButtonElement.parentNode.innerText + '"?';
-        deletedTask = deleteButtonElement.parentNode;
-    });
+    var deleteButtonElement = createHeaderDeleteBtn();
+    deleteButtonElement.classList.add('taskHeaderButton');
 
     return deleteButtonElement;
 }
