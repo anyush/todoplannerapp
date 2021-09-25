@@ -108,6 +108,7 @@ class ProjectConsumer(JsonWebsocketConsumer):
         'get_data': (get_project_data, structures.ProjectStructure),
         'create_task': (create_task, structures.TaskCreateStructure),
         'move_task': (move_task, structures.TaskMoveStructure),
+        'delete_task': (delete_task, structures.TaskDeleteStructure),
         'create_task_group': (create_task_group, structures.TaskGroupCreateStructure),
         'modify_task_group': (modify_task_group, structures.TaskGroupModifyStructure),
         'move_task_group': (move_task_group, structures.TaskGroupMoveStructure),

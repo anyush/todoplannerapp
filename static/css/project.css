@@ -8,7 +8,7 @@
     height: max-content;
     background-color: #e1eff5;
     overflow: hidden;
-    table-layout: auto;
+    table-layout: fixed;
 }
 
 .taskGroup {
